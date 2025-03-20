@@ -1,0 +1,27 @@
+{
+  "name": "webchat-be-nodejs",
+  "version": "1.0.0",
+  "description": "Web chat nodejs",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon ./src/app.js"
+  },
+  "keywords": [
+    "nodejs"
+  ],
+  "author": "Khang-Trung",
+  "license": "ISC",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.758.0",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "joi": "^17.13.3",
+    "mongoose": "^8.12.1",
+    "mongoose-delete": "^1.0.2",
+    "multer": "^1.4.5-lts.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}
