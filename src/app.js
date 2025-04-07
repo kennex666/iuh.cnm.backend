@@ -8,7 +8,7 @@ const HOST = process.env.HOST_NAME;
     try {
         await connection();
         app.listen(PORT, HOST, () => {
-            console.log(`Post service is listening on port ${PORT}`);
+            console.log(`Server is listening on port ${PORT}`);
         })
     } catch (error) {
         console.log("BACKEND ERROR CONNECTING TO DBS: ", error);
