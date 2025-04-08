@@ -12,8 +12,8 @@ const getAllFriendRequestsController = async (req, res) => {
             data: friendRequests,
         });
     } catch (error) {
-        res.status(500).json({
-            status: "500",
+        res.status(200).json({
+            status: "200",
             message: error.message,
             data: null,
         });
@@ -29,8 +29,8 @@ const getFriendRequestByIdController = async (req, res) => {
             data: friendRequest,
         });
     } catch (error) {
-        res.status(500).json({
-            status: "500",
+        res.status(200).json({
+            status: "200",
             message: error.message,
             data: null,
         });
@@ -52,8 +52,8 @@ const createFriendRequestController = async (req, res) => {
             data: newFriendRequest,
         });
     } catch (error) {
-        res.status(500).json({
-            status: "500",
+        res.status(200).json({
+            status: "200",
             message: error.message,
             data: null,
         });
@@ -69,8 +69,8 @@ const updateFriendRequestDeclineController = async (req, res) => {
             data: friendRequest,
         });
     } catch (error) {
-        res.status(500).json({
-            status: "500",
+        res.status(200).json({
+            status: "200",
             message: error.message,
             data: null,
         });
@@ -85,8 +85,8 @@ const updateFriendRequestAcceptController = async (req, res) => {
             data: friendRequest,
         });
     } catch (error) {
-        res.status(500).json({
-            status: "500",
+        res.status(200).json({
+            status: "200",
             message: error.message,
             data: null,
         });
@@ -101,8 +101,8 @@ const deleteFriendRequestController = async (req, res) => {
             data: friendRequest,
         });
     } catch (error) {
-        res.status(500).json({
-            status: "500",
+        res.status(200).json({
+            status: "200",
             message: error.message,
             data: null,
         });
@@ -118,8 +118,8 @@ const getAllAcceptedFriendRequestsController = async (req, res) => {
             data: friendRequests,
         });
     } catch (error) {
-        res.status(500).json({
-            status: "500",
+        res.status(200).json({
+            status: "200",
             message: error.message,
             data: null,
         });
@@ -134,8 +134,8 @@ const getAllDeclinedFriendRequestsController = async (req, res) => {
             data: friendRequests,
         });
     } catch (error) {
-        res.status(500).json({
-            status: "500",
+        res.status(200).json({
+            status: "200",
             message: error.message,
             data: null,
         });
@@ -150,8 +150,8 @@ const getAllPendingFriendRequestsController = async (req, res) => {
             data: friendRequests,
         });
     } catch (error) {
-        res.status(500).json({
-            status: "500",
+        res.status(200).json({
+            status: "200",
             message: error.message,
             data: null,
         });
