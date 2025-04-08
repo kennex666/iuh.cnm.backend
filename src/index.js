@@ -7,8 +7,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 //app.use("/v1/api", router);
-const router = require("./routes/conversationRoute");
-app.use("/api/conversations", router);
+const conversationRoute = require("./routes/conversationRoute");
+app.use("/api/conversations", conversationRoute);
 
 const messageRoute = require("./routes/messageRoute");
 app.use("/api/messages", messageRoute);

@@ -1,18 +1,18 @@
 const express = require("express");
 const {getAllConversationsController, getConversationByIdController, createConversationController, updateConversationController, deleteConversationController} = require("../controllers/conversationController");
 
-const router = express.Router();
+const conversationRoute = express.Router();
 
 //get all conversations
-router.get("/", getAllConversationsController);
+conversationRoute.get("/", getAllConversationsController);
 //get conversation by id
-router.get("/:id", getConversationByIdController);
+conversationRoute.get("/:id", getConversationByIdController);
 //save conversation
-router.post("/", createConversationController);
+conversationRoute.post("/", createConversationController);
 //update conversation
-router.put("/:id", updateConversationController);
+conversationRoute.put("/:id", updateConversationController);
 //delete conversation
-router.delete("/:id", deleteConversationController);
+conversationRoute.delete("/:id", deleteConversationController);
 
 
-module.exports = router;
+module.exports = conversationRoute;
