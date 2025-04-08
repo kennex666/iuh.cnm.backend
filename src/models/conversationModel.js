@@ -8,7 +8,7 @@ const conversationSchema = new Schema({
     name: { type: String, default: '' },
     avatar: { type: String, default: '' },
     participants: { type: Array, default: [] },
-    adminIds: { type: Array, default: [] }, // sửa từ 'admindIds' thành 'adminIds'
+    adminIds: { type: Array, default: [] }, 
     settings: { type: Object, default: {} },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now }

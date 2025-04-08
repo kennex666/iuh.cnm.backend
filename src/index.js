@@ -10,4 +10,6 @@ app.use(express.urlencoded({ extended: true }));
 const router = require("./routes/conversationRoute");
 app.use("/api/conversations", router);
 
+const messageRoute = require("./routes/messageRoute");
+app.use("/api/messages", messageRoute);
 module.exports = app;
