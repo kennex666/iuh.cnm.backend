@@ -1,4 +1,4 @@
-const {getAllMessagesController, getMessageByIdController, createMessageController, updateMessageController, deleteMessageController} = require('../controllers/messageController');
+const {getAllMessagesController, getMessageByIdController, createMessageController, updateMessageController, deleteMessageController} = require('../controllers/message-controller');
 const express = require("express");
 const messageRoute = express.Router();
 

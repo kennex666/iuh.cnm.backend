@@ -1,11 +1,9 @@
-
-
 const express = require("express");
-const authRoutes = require("./authRoutes");
-const userRoutes = require("./userRoutes");
-const friendRequestRoute = require("./friendRequestRoute");
-const conversationRoute = require("./conversationRoute");
-const messageRoute = require("./messageRoute");
+const authRoutes = require("./auth-routes");
+const userRoutes = require("./user-routes.js");
+const friendRequestRoute = require("./friendrequest-route.js");
+const conversationRoute = require("./conversation-route");
+const messageRoute = require("./message-route.js");
 
 const router = express.Router();
 

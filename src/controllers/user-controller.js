@@ -1,6 +1,6 @@
 // src/controllers/user.controller.js
-const { handleError, responseFormat } = require("../utils/responseFormat");
-const UserService = require("../services/user.service");
+const { handleError, responseFormat } = require("../utils/response-format");
+const UserService = require("../services/user-service");
 
 class UserController {
     async getUserById(req, res) {

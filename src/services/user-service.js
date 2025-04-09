@@ -1,7 +1,7 @@
 
 const UserModel = require("../models/user");
-const { AppError } = require("../utils/responseFormat");
-const S3FileManager = require("./s3FileManager");
+const { AppError } = require("../utils/response-format");
+const S3FileManager = require("./s3-file-manager");
 
 class UserService {
     async getUserById(userId) {

@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const { Schema, model } = mongoose;
-const typeMessage = require('./typeMessage'); // Import typeMessage từ file typeMessage.js
+const typeMessage = require('./type-message'); // Import typeMessage từ file typeMessage.js
 
 // Định nghĩa schema cho Message
 const messageSchema = new Schema({

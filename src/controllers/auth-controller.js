@@ -1,5 +1,5 @@
-const { handleError, responseFormat } = require("../utils/responseFormat");
-const AuthService = require("../services/auth.service");
+const { handleError, responseFormat } = require("../utils/response-format");
+const AuthService = require("../services/auth-service");
 
 class AuthController {
     async register(req, res) {

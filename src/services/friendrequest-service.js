@@ -1,5 +1,5 @@
-const friendRequestModel = require('../models/friendRequestModel');
-const typeRequest = require('../models/typeRequest');
+const friendRequestModel = require('../models/friendrequest-model');
+const typeRequest = require('../models/type-request');
 
 // Lấy tất cả yêu cầu kết bạn
 const getAllFriendRequests = async (req, res) => {
