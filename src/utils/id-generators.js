@@ -7,6 +7,10 @@ const uid = new Snowflake({
     instance_id: 1,
 });
 
+/**
+ * Generate a unique ID using Snowflake algorithm
+ * @returns {string} - A unique ID
+ */
 const generateIdSnowflake = () => {
     return uid.getUniqueID(); // A 64 bit id is returned
 }
