@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const { Schema, model } = mongoose;
 const typeMessage = require('./type-message'); // Import typeMessage từ file typeMessage.js
+const { generateIdSnowflake } = require("../utils/id-generators");
 
 // Định nghĩa schema cho Message
 const messageSchema = new Schema({
@@ -13,12 +14,16 @@ const messageSchema = new Schema({
     sentAt: { type: Date, default: Date.now },
     readBy: { type: Array, default: [] },
 });
-messageSchema.pre('save', function (next) {
-    if (this.isNew || this.id === undefined) {
-        this.id = this._id.toString();
-    }
-    next();
-});
+// messageSchema.pre('save', function (next) {
+//     if (this.isNew || this.id === undefined) {
+//         this.id = this._id.toString();
+//     }
+//     next();
+// });
+
+messageSchema.statics.findById = function (id) {
+	return this.findOne({ id: id })
+};
 
 const messageModel = model('messageModel', messageSchema);
 //export model Message
