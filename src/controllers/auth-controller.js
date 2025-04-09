@@ -9,7 +9,23 @@ class AuthController {
         try {
             const dataUser = req.body;
             const user = await AuthService.register(dataUser);
-            responseFormat(res, user, "Create user successful", true, 201);
+            const msg =
+				"Ban tao tai khoan iMessify. TUYET DOI KHONG CHIA SE MA VOI BAT KI AI\n";
+			// replace phonenumber with +84
+			const phoneNumber = user.phone.replace(/^(0)/, "+84");
+			const result = await UserService.createOTP(user.id);
+			if (!user) {
+				return responseFormat(
+					res,
+					null,
+					"Failed to create OTP",
+					false,
+					500
+				);
+			}
+			const otp = user.otp.code;
+			await sendOtp({ phoneNumber, msg, otp });
+			responseFormat(res, null, "OTP sent successfully", true, 200);
         } catch (error) {
             handleError(error, res, "Create user failed");
         }
@@ -23,7 +39,7 @@ class AuthController {
                 if (!otp) {
                     return responseFormat(res, null, "OTP is required", false, 203);
                 }
-                
+
                 // Check if the user has a twoFASecret
                 if (!result?.user?.settings?.twoFASecret) {
                     return responseFormat(res, null, "Two-factor authentication secret not found", false, 400);
@@ -96,6 +112,7 @@ class AuthController {
             handleError(error, res, "Failed to send password reset link");
         }
     }
+    
 
     async verifyOtp(req, res) {
         try {
@@ -110,7 +127,7 @@ class AuthController {
 					400
 				);
 			}
-            const result = await AuthService.verifyOtp(phone, otp);
+            const result = await AuthService.verifyAccount(phone, otp);
             if (!result) {
                 return responseFormat(res, null, "Invalid OTP", false, 400);
             }
@@ -154,6 +171,26 @@ class AuthController {
             handleError(error, res, "Failed to change password");
         }
     }
+
+    async verifyAccount(req, res) {
+        try {
+            const { phone, otp } = req.body;
+            if (!phone || phone.trim() === "") {
+                return responseFormat(res, null, "Phone number is required", false, 400);
+            }
+            if (!otp || otp.trim() === "") {
+                return responseFormat(res, null, "OTP is required", false, 400);
+            }
+            const result = await AuthService.verifyAccount(phone, otp);
+            if (!result) {
+                return responseFormat(res, null, "Failed to verify account", false, 400);
+            }
+            responseFormat(res, result, "Account verified successfully", true, 200);
+        } catch (error) {
+            handleError(error, res, "Failed to verify account");
+        }
+    }
+            
 }
 
 module.exports = new AuthController();

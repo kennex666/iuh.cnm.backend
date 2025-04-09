@@ -18,6 +18,10 @@ const validateLogin = [
     body("password").notEmpty().withMessage("Password is required"),
 ];
 
+const validatePhone = [
+    body("phone").notEmpty().withMessage("Phone is required").isString().withMessage("Phone must be a string").isMobilePhone().withMessage("Invalid phone number"),
+];
+
 const validateLogin2FA = [
     body("phone").notEmpty().withMessage("Phone is required").isString().withMessage("Phone must be a string").isMobilePhone().withMessage("Invalid phone number"),
     body("password").notEmpty().withMessage("Password is required"),
@@ -45,5 +49,6 @@ router.post("/forgot-password", (req, res) => {
     return AuthController.forgotPassword(req, res);
 
 });
+router.post("/verify-account", validatePhone, validateBody, AuthController.verifyOtp);
 
 module.exports = router;

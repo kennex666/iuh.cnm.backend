@@ -156,11 +156,10 @@ class AuthService {
 				throw new AppError("Invalid OTP", 400);
 			}
 
-			user = UserService.updateOTP(user.id, {
+			user = await UserService.updateOTP(user.id, {
 				expiredAt: Date.now() + 5 * 60 * 1000, // OTP valid for 5 minutes to change password
 			});
 
-			user.otp = {};
 			return user;
 		} catch (error) {
             console.log(error)
@@ -211,6 +210,47 @@ class AuthService {
 		}
 	}
 
+    async verifyAccount(phone, otp) {
+        try {
+            if (!phone || !otp) {
+                throw new AppError("Phone number and OTP are required", 400);
+            }
+            let user = await UserService.getUserByPhone(phone);
+            if (!user) {
+                throw new AppError("User not found", 404);
+            }
+            const otpData = user.otp;
+            if (!otpData) {
+                throw new AppError("Invalid OTP", 400);
+            }
+
+            if (new Date(otpData.expiredAt) < new Date()) {
+                throw new AppError("OTP expired", 400);
+            }
+
+            if (otpData.isUsed) {
+                throw new AppError("OTP already used or invalid OTP", 400);
+            }
+
+            if (otpData.code != otp) {
+                throw new AppError("Invalid OTP", 400);
+            }
+
+            user.otp = {
+                ...user.otp,
+                isUsed: true,
+            };
+
+            user.isVerified = true;
+
+            await user.save();
+            return { ...user.toObject(), id: user.id.toString() };
+        } catch (error) {
+            console.log(error)
+            throw new AppError("Error verifying account", 500);
+        }
+    }
+
     async changePassword(userId, oldPassword, newPassword) {
         try {
             if (!oldPassword || !newPassword) {
@@ -232,6 +272,7 @@ class AuthService {
             throw new AppError("Error changing password", 500);
         }
     }
+    
 }
 
 module.exports = new AuthService();
