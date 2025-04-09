@@ -28,6 +28,20 @@ function generateOTP(length = 6) {
 }
 
 /**
+ * Tạo string ngẫu nhiên
+ * @param {number} length - Độ dài của string
+ * @return {string} - String ngẫu nhiên
+ */
+function generateString(length) {
+	const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+	let result = "";
+	for (let i = 0; i < length; i++) {
+		result += charset.charAt(Math.floor(Math.random() * charset.length));
+	}
+	return result;
+}
+
+/**
  * Xác minh mã 2FA
  * @param {string} secret - Secret key
  * @return {Promise<string>} - URL mã QR
@@ -45,4 +59,5 @@ module.exports = {
 	generate2FASecret,
 	verify2FACode,
 	generateOTP,
+	generateString,
 };

@@ -82,6 +82,25 @@ class AuthService {
 		};
 	}
 
+	async loginById(id) {
+		const user = await UserModel.findOne({ id });
+		if (!user) throw new AppError("Invalid userId", 401);
+
+		const accessToken = this.generateAccessToken(user.id.toString());
+		const refreshToken = this.generateRefreshToken(user.id.toString());
+
+		user.isOnline = true;
+		await user.save();
+		const userData = { ...user.toObject(), id: user.id.toString() };
+		delete userData.password;
+
+		return {
+			accessToken,
+			refreshToken,
+			user: userData,
+		};
+	}
+
 	async logout(jti) {
 		updateToken(jti, { state: "inactive" });
 		return true;
@@ -136,7 +155,7 @@ class AuthService {
 				throw new AppError("Phone number and OTP are required", 400);
 			}
 			let user = await UserService.getUserByPhone(phone);
-            console.log(user)
+			console.log(user);
 			if (!user) {
 				throw new AppError("User not found", 404);
 			}
@@ -163,7 +182,7 @@ class AuthService {
 
 			return user;
 		} catch (error) {
-            console.log(error)
+			console.log(error);
 			throw new AppError("Error verifying OTP", 500);
 		}
 	}
@@ -206,74 +225,76 @@ class AuthService {
 			await user.save();
 			return { ...user.toObject(), id: user.id.toString() };
 		} catch (error) {
-            console.log(error)
+			console.log(error);
 			throw new AppError("Error changing password", 500);
 		}
 	}
 
-    async verifyAccount(phone, otp) {
-        try {
-            if (!phone || !otp) {
-                throw new AppError("Phone number and OTP are required", 400);
-            }
-            let user = await UserService.getUserByPhone(phone);
-            if (!user) {
-                throw new AppError("User not found", 404);
-            }
-            const otpData = user.otp;
-            if (!otpData) {
-                throw new AppError("Invalid OTP", 400);
-            }
+	async verifyAccount(phone, otp) {
+		try {
+			if (!phone || !otp) {
+				throw new AppError("Phone number and OTP are required", 400);
+			}
+			let user = await UserService.getUserByPhone(phone);
+			if (!user) {
+				throw new AppError("User not found", 404);
+			}
+			const otpData = user.otp;
+			if (!otpData) {
+				throw new AppError("Invalid OTP", 400);
+			}
 
-            if (new Date(otpData.expiredAt) < new Date()) {
-                throw new AppError("OTP expired", 400);
-            }
+			if (new Date(otpData.expiredAt) < new Date()) {
+				throw new AppError("OTP expired", 400);
+			}
 
-            if (otpData.isUsed) {
-                throw new AppError("OTP already used or invalid OTP", 400);
-            }
+			if (otpData.isUsed) {
+				throw new AppError("OTP already used or invalid OTP", 400);
+			}
 
-            if (otpData.code != otp) {
-                throw new AppError("Invalid OTP", 400);
-            }
+			if (otpData.code != otp) {
+				throw new AppError("Invalid OTP", 400);
+			}
 
-            user.otp = {
-                ...user.otp,
-                isUsed: true,
-            };
+			user.otp = {
+				...user.otp,
+				isUsed: true,
+			};
 
-            user.isVerified = true;
+			user.isVerified = true;
 
-            await user.save();
-            return { ...user.toObject(), id: user.id.toString() };
-        } catch (error) {
-            console.log(error)
-            throw new AppError("Error verifying account", 500);
-        }
-    }
+			await user.save();
+			return { ...user.toObject(), id: user.id.toString() };
+		} catch (error) {
+			console.log(error);
+			throw new AppError("Error verifying account", 500);
+		}
+	}
 
-    async changePassword(userId, oldPassword, newPassword) {
-        try {
-            if (!oldPassword || !newPassword) {
-                throw new AppError("Old password and new password are required", 400);
-            }
-            const user = await UserModel.findById(userId);
-            if (!user) {
-                throw new AppError("User not found", 404);
-            }
-            const isMatch = await user.comparePassword(oldPassword);
-            if (!isMatch) {
-                throw new AppError("Invalid old password", 401);
-            }
-            user.password = await this.encryptPassword(newPassword);
-            await user.save();
-            return { ...user.toObject(), id: user.id.toString() };
-        } catch (error) {
-            console.log(error)
-            throw new AppError("Error changing password", 500);
-        }
-    }
-    
+	async changePassword(userId, oldPassword, newPassword) {
+		try {
+			if (!oldPassword || !newPassword) {
+				throw new AppError(
+					"Old password and new password are required",
+					400
+				);
+			}
+			const user = await UserModel.findById(userId);
+			if (!user) {
+				throw new AppError("User not found", 404);
+			}
+			const isMatch = await user.comparePassword(oldPassword);
+			if (!isMatch) {
+				throw new AppError("Invalid old password", 401);
+			}
+			user.password = await this.encryptPassword(newPassword);
+			await user.save();
+			return { ...user.toObject(), id: user.id.toString() };
+		} catch (error) {
+			console.log(error);
+			throw new AppError("Error changing password", 500);
+		}
+	}
 }
 
 module.exports = new AuthService();

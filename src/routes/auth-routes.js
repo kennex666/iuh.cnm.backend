@@ -3,6 +3,7 @@ const { validateBody } = require("../middlewares/validation");
 const AuthController = require("../controllers/auth-controller");
 const authMiddleware = require("../middlewares/auth");
 const express = require("express");
+const { io } = require("./socket-routes");
 const router = express.Router();
 
 const validateRegister = [
@@ -51,5 +52,6 @@ router.post("/forgot-password", (req, res) => {
 });
 router.post("/verify-account", validatePhone, validateBody, AuthController.verifyOtp);
 router.post("/resend-otp", validatePhone, validateBody, AuthController.resendOtp);
+router.post("/login-qr", authMiddleware, AuthController.loginQR);
 
 module.exports = router;
