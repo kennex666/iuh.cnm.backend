@@ -21,7 +21,7 @@ function generate2FASecret(name) {
  * @return {number} - Mã OTP ngẫu nhiên
  */
 function generateOTP(length = 6) {
-	return "123456";
+	// return "123456";
 	return Math.floor(
 		Math.pow(10, length - 1) + Math.random() * 9 * Math.pow(10, length - 1)
 	);

@@ -177,7 +177,7 @@ class AuthController {
 					400
 				);
 			}
-            const result = await AuthService.verifyAccount(phone, otp);
+            const result = await AuthService.verifyOtp(phone, otp);
             if (!result) {
                 return responseFormat(res, null, "Invalid OTP", false, 400);
             }
