@@ -1,9 +1,10 @@
 const mongoose = require('mongoose');
 const { Schema, model } = mongoose;
+const { generateIdSnowflake } = require("../utils/id-generators");
 
 // Định nghĩa schema cho Conversation
 const conversationSchema = new Schema({
-    id: { type: String },
+    id: { type: String, default: generateIdSnowflake, unique: true },
     isGroup: { type: Boolean, default: false },
     name: { type: String, default: '' },
     avatar: { type: String, default: '' },
@@ -15,12 +16,12 @@ const conversationSchema = new Schema({
 });
 
 // Middleware: tự động gán 'id' từ '_id' của MongoDB khi lưu
-conversationSchema.pre('save', function (next) {
-    if (this.isNew || this.id === undefined) {
-        this.id = this._id.toString();
-    }
-    next();
-});
+// conversationSchema.pre('save', function (next) {
+//     if (this.isNew || this.id === undefined) {
+//         this.id = this._id.toString();
+//     }
+//     next();
+// });
 
 // Middleware: tự động cập nhật 'updatedAt' khi tài liệu được cập nhật
 conversationSchema.pre('findOneAndUpdate', function (next) {
@@ -33,6 +34,10 @@ conversationSchema.pre('updateOne', function (next) {
     this.set({ updatedAt: Date.now() });
     next();
 });
+
+conversationSchema.statics.findById = function (id) {
+	return this.findOne({ id: id })
+};
 
 // Tạo model Conversation từ schema
 const conversation = model('conversation', conversationSchema);
