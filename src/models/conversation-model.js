@@ -39,6 +39,14 @@ conversationSchema.statics.findById = function (id) {
 	return this.findOne({ id: id })
 };
 
+conversationSchema.statics.findByIdAndDelete = function (id) {
+    return this.findOneAndDelete({ id: id })
+}
+
+conversationSchema.statics.findByIdAndUpdate = function (id, update) {
+    return this.findOneAndUpdate({ id: id }, update, { new: true });
+}
+
 // Tạo model Conversation từ schema
 const conversation = model('conversation', conversationSchema);
 
