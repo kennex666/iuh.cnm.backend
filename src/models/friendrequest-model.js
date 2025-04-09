@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const { Schema, model } = mongoose;
-const typeRequest = require('./typeRequest'); // Import typeRequest từ file typeRequest.js
-const { create } = require('./messageModel');
+const typeRequest = require('./type-request'); // Import typeRequest từ file typeRequest.js
+const { create } = require('./message-model');
 
 // Định nghĩa schema cho FriendRequest
 const friendRequestSchema = new Schema({

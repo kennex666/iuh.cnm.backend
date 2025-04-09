@@ -1,4 +1,4 @@
-const {getAllMessages, getMessageById, createMessage, updateMessage, deleteMessage} = require("../services/messageService");
+const {getAllMessages, getMessageById, createMessage, updateMessage, deleteMessage} = require("../services/message-service");
 
 const getAllMessagesController = async (req, res) => {
     try {

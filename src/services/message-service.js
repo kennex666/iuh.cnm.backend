@@ -1,5 +1,5 @@
 const { date } = require('joi');
-const messageModel = require('../models/messageModel');
+const messageModel = require('../models/message-model');
 
 const getAllMessages = async (req, res) => {
     try {

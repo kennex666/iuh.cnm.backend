@@ -1,4 +1,4 @@
-const {getAllConversations, getConversationById, createConversation, updateConversation, deleteConversation} = require('../services/conversationService');
+const {getAllConversations, getConversationById, createConversation, updateConversation, deleteConversation} = require('../services/conversation-service');
 
 const getAllConversationsController = async (req, res) => {
     try {

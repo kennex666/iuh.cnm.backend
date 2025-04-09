@@ -1,4 +1,4 @@
-const conversation = require('../models/conversationModel');
+const conversation = require('../models/conversation-model');
 
 const getAllConversations = async (req, res) => {
     try {

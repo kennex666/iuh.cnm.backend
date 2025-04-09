@@ -1,7 +1,5 @@
 const express = require("express");
-const {getAllFriendRequestsController, getFriendRequestByIdController, createFriendRequestController, updateFriendRequestDeclineController,
-    updateFriendRequestAcceptController, deleteFriendRequestController,
-getAllAcceptedFriendRequestsController,getAllDeclinedFriendRequestsController,getAllPendingFriendRequestsController} = require("../controllers/friendRequestController");
+const { getAllFriendRequestsController, getFriendRequestByIdController, createFriendRequestController, updateFriendRequestAcceptController, updateFriendRequestDeclineController, deleteFriendRequestController, getAllPendingFriendRequestsController, getAllAcceptedFriendRequestsController, getAllDeclinedFriendRequestsController } = require("../controllers/friendRequest-controller");
 
 const friendRequestRoute = express.Router();
 

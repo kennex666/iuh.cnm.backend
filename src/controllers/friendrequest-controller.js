@@ -1,7 +1,7 @@
 const { getAllFriendRequests, getFriendRequestById, createFriendRequest, updateFriendRequestDecline,updateFriendRequestAccept, deleteFriendRequest,
     getAllAcceptedFriendRequests,getAllDeclinedFriendRequests,getAllPendingFriendRequests
- } = require("../services/friendRequestService");
-const typeRequest = require("../models/typeRequest");
+ } = require("../services/friendrequest-service");
+const typeRequest = require("../models/type-request");
 
 const getAllFriendRequestsController = async (req, res) => {
     try {

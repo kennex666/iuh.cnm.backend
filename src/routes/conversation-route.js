@@ -1,5 +1,5 @@
 const express = require("express");
-const {getAllConversationsController, getConversationByIdController, createConversationController, updateConversationController, deleteConversationController} = require("../controllers/conversationController");
+const {getAllConversationsController, getConversationByIdController, createConversationController, updateConversationController, deleteConversationController} = require("../controllers/conversation-controller");
 
 const conversationRoute = express.Router();
 
