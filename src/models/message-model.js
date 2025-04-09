@@ -24,6 +24,13 @@ const messageSchema = new Schema({
 messageSchema.statics.findById = function (id) {
 	return this.findOne({ id: id })
 };
+messageSchema.statics.findByIdAndDelete = function (id) {
+    return this.findOneAndDelete({ id: id })
+}
+
+messageSchema.statics.findByIdAndUpdate = function (id, update) {
+    return this.findOneAndUpdate({ id: id }, update, { new: true });
+}
 
 const messageModel = model('messageModel', messageSchema);
 //export model Message
