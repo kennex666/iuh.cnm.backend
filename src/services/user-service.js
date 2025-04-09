@@ -100,6 +100,25 @@ class UserService {
         await user.save();
         return user;
     }
+
+    async updateOTP(userId, otp) {
+        const user = await UserModel.findById(userId);
+        if (!user) throw new AppError("User not found", 404);
+        if (!user.otp) throw new AppError("OTP not found", 404);
+
+        if (user.otp.isUsed) throw new AppError("OTP already used", 400);
+
+        if (new Date(user.otp.expiredAt) < new Date()) {
+            throw new AppError("OTP expired", 400);
+        }
+        
+        user.otp = {
+            ...user.otp,
+            ...otp
+        }
+        await user.save();
+        return user;
+    }
 }
 
 module.exports = new UserService();

@@ -118,6 +118,82 @@ class AuthService {
             throw new AppError("Error sending password reset link", 500);
         }
     }
+
+    async forgotPasswordInputOTP(phone, otp) {
+        try {
+            if (!phone || !otp) {
+                throw new AppError("Phone number and OTP are required", 400);
+            }
+            let user = UserService.getUserByPhone(phone);
+            if (!user) {
+                throw new AppError("User not found", 404);
+            }
+            const otpData = user.otp;
+            if (!otpData) {
+                throw new AppError("Invalid OTP", 400);
+            }
+
+            if (new Date(otpData.expiredAt) < new Date()) {
+                throw new AppError("OTP expired", 400);
+            }
+
+            if (otpData.isUsed){
+                throw new AppError("OTP already used or invalid OTP", 400);
+            }
+
+            if (otpData.otp != otp) {
+                throw new AppError("Invalid OTP", 400);
+            }
+            
+            user = UserService.updateOTP(user.id, {
+                expiredAt: Date.now() + 5 * 60 * 1000, // OTP valid for 5 minutes to change password
+            });
+            
+            user.otp = {};
+            return user;
+        } catch (error) {
+            throw new AppError("Error verifying OTP", 500);
+        }
+    }
+
+    async forgotPasswordChangePassword(phone, otp, password) {
+        try {
+            if (!phone || !otp || !password) {
+                throw new AppError("Phone number, OTP and password are required", 400);
+            }
+            let user = UserService.getUserByPhone(phone);
+            if (!user) {
+                throw new AppError("User not found", 404);
+            }
+            const otpData = user.otp;
+            if (!otpData) {
+                throw new AppError("Invalid OTP", 400);
+            }
+
+            if (new Date(otpData.expiredAt) < new Date()) {
+                throw new AppError("OTP expired", 400);
+            }
+
+            if (otpData.isUsed){
+                throw new AppError("OTP already used or invalid OTP", 400);
+            }
+
+            if (otpData.otp != otp) {
+                throw new AppError("Invalid OTP", 400);
+            }
+            
+            user.password = await this.encryptPassword(password);
+            user.otp = {
+                ...user.otp,
+                isUsed: true,
+            };
+            
+            await user.save();
+            return { ...user.toObject(), id: user.id.toString() };
+        } catch (error) {
+            throw new AppError("Error changing password", 500);
+        }
+    }
 }
 
 module.exports = new AuthService();
