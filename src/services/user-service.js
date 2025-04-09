@@ -72,6 +72,7 @@ class UserService {
     }
 
     async searchUsers(phoneQuery) {
+        if (!phoneQuery) throw new AppError("Phone number is required", 400);
         const users = await UserModel.find({
             phone: { $regex: phoneQuery, $options: "i" },
         }).select("-password");
@@ -79,11 +80,12 @@ class UserService {
     }
 
     async getUserByPhone(phone) {
+        if (!phone) throw new AppError("Phone number is required", 400);
         const user = await UserModel.findOne({
             phone: { $regex: phone, $options: "i" },
         }).select("-password");
         if (!user) throw new AppError("User not found", 404);
-        return { ...user.toObject(), id: user.id.toString() };
+        return user;
     }
 
     async createOTP(userId) {
