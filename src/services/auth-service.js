@@ -97,6 +97,27 @@ class AuthService {
             throw new AppError("Invalid or expired refresh token", 401);
         }
     }
+
+    // forgot-password send otp
+    async forgotPassword(phone) {
+        try {
+            if (!phone) {
+                throw new AppError("Phone number is required", 400);
+            }
+            const user = UserService.getUserByPhone(phone);
+            if (!user) {
+                throw new AppError("User not found", 404);
+            }
+            const otp = Math.floor(100000 + Math.random() * 900000).toString();
+            const otpData = await UserService.createOTP(user.id, otp);
+            if (!otpData) {
+                throw new AppError("Failed to create OTP", 500);
+            }
+            return user;
+        } catch (error) {
+            throw new AppError("Error sending password reset link", 500);
+        }
+    }
 }
 
 module.exports = new AuthService();

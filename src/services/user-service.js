@@ -77,6 +77,29 @@ class UserService {
         }).select("-password");
         return users.map((user) => ({ ...user.toObject(), id: user.id.toString() }));
     }
+
+    async getUserByPhone(phone) {
+        const user = await UserModel.findOne({
+            phone: { $regex: phone, $options: "i" },
+        }).select("-password");
+        if (!user) throw new AppError("User not found", 404);
+        return { ...user.toObject(), id: user.id.toString() };
+    }
+
+    async createOTP(userId) {
+        const user = await UserModel.findById(userId);
+        if (!user) throw new AppError("User not found", 404);
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        user.otp = {
+			code: otp,
+			expiredAt: Date.now() + 5 * 60 * 1000, // OTP valid for 5 minutes
+			isUsed: false,
+		};
+
+        await user.save();
+        return user;
+    }
 }
 
 module.exports = new UserService();

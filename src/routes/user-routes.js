@@ -29,7 +29,7 @@ const validateUpdateUser = [
 router.get("/search", UserController.searchUsers);
 router.get("/:id", UserController.getUserById);
 router.put(
-    "/:id",
+    "/update",
     authMiddleware,
     upload.fields([
         { name: "avatar", maxCount: 1 },

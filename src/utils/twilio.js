@@ -27,12 +27,12 @@ function generateOTP(length = 6) {
  * @param {string} phoneNumber - Số điện thoại người nhận (định dạng quốc tế, ví dụ: +84901234567)
  * @returns {Promise<string>} - Mã OTP đã gửi
  */
-async function sendOtp({phoneNumber, msg}) {
+async function sendOtp({phoneNumber, msg, otp = null}) {
     if (!phoneNumber) {
         throw new Error("Số điện thoại không hợp lệ");
     }
-	const otp = generateOTP();
-	const message = `${msg}\nMa OTP cua ban la: ${otp}`;
+	const otpStr = otp || generateOTP();
+	const message = `${msg}\nMa OTP cua ban la: ${otpStr}`;
 
 	await client.messages.create({
 		body: message,
@@ -40,10 +40,10 @@ async function sendOtp({phoneNumber, msg}) {
 		from: TWILIO_PHONENUMBER, // ví dụ: +12065551234
 	});
 
-	console.log("✅ OTP đã gửi:", otp);
+	console.log("✅ OTP đã gửi:", otpStr);
 
 	// Tuỳ bạn: Lưu OTP vào Redis, MongoDB, hoặc tạm thời cache để xác minh sau
-	return otp;
+	return otpStr;
 }
 
 module.exports = {
