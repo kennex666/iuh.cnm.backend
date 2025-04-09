@@ -5,6 +5,7 @@ const saveTokenJWT = async (data) => {
         const jwtToken = new JwtTokenModel(data);
         return await jwtToken.save();
     } catch (error) {
+        console.log(error)
         if (error instanceof Error) {
             throw new Error("Cannot save jti");
         } else {
@@ -32,8 +33,8 @@ const updateToken = async (id, data) => {
         if (!token) {
             throw new Error("Token not found");
         }
-        token.state = data.state;
-        token.expiredAt = data.expiredAt;
+        token.state = data?.state || token.state;
+        token.expiredAt = data?.expiredAt || token.expiredAt;
         await token.save();
         return token;
     } catch (error) {

@@ -24,8 +24,7 @@ class AuthController {
 
     async logout(req, res) {
         try {
-            const userId = req.user.id;
-            await AuthService.logout(userId);
+            await AuthService.logout(req.jwt.jti);
             responseFormat(res, null, "Logout successful", true, 200);
         } catch (error) {
             handleError(error, res, "Logout failed");

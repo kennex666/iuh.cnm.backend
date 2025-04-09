@@ -34,8 +34,8 @@ UserSchema.methods.comparePassword = async function (candidatePassword) {
     return bcrypt.compare(candidatePassword, this.password);
 };
 
-UserSchema.statics.findById = async function (id) {
-	return this.findOne({ id: id, isDeleted: false });
+UserSchema.statics.findById = function (id) {
+	return this.findOne({ id: id })
 };
 
 const UserModel = model("User", UserSchema);

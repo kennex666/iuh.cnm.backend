@@ -3,16 +3,27 @@ const { generateIdSnowflake } = require("../utils/id-generators");
 const { AppError } = require("../utils/response-format");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const { saveTokenJWT, updateToken } = require("./jwt-token-service");
+const { parseTimeJWT } = require("../utils/date-time-formatter");
 
 
 
 class AuthService {
     generateAccessToken(userId) {
+        const data = {
+            userId: userId,
+            jwtId: generateIdSnowflake().toString(),
+            state: "active",
+            expiredAt: new Date(Date.now() + parseTimeJWT(process.env.JWT_EXPIRES_IN || "1h"))
+        }
+
+        saveTokenJWT(data);
+        
         return jwt.sign(
-            { id: userId },
-            process.env.ACCESS_TOKEN_SECRET,
-            { expiresIn: process.env.JWT_EXPIRES_IN || "1h", jwtid: generateIdSnowflake().toString()}  // Default: 1 hr
-        );
+			{ id: data.userId },
+			process.env.ACCESS_TOKEN_SECRET,
+			{ expiresIn: process.env.JWT_EXPIRES_IN || "1h", jwtid: data.jwtId } // Default: 1 hr
+		);
     };
 
     generateRefreshToken(userId) {
@@ -63,11 +74,8 @@ class AuthService {
         };
     }
 
-    async logout(userId) {
-        const user = await UserModel.findById(userId);
-        if (!user) throw new AppError("User not found", 404);
-        user.isOnline = false;
-        await user.save();
+    async logout(jti) {
+        updateToken(jti, { state: "inactive" });
         return true;
     }
 

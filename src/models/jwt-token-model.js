@@ -8,10 +8,11 @@ const JwtTokenSchema = new Schema({
     expiredAt: { type: Date, required: true },
 }, { collection: "jwt-tokens", timestamps: true });
 
-const JwtTokenModel = model("JwtToken", JwtTokenSchema);
 
-JwtTokenModel.statics.findById = async function (id) {
-    return this.findOne({ id: id, isDeleted: false });
+JwtTokenSchema.statics.findById = function (id) {
+	return this.findOne({ jwtId: id });
 };
+
+const JwtTokenModel = model("JwtToken", JwtTokenSchema);
 
 module.exports = JwtTokenModel;
