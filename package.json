@@ -10,14 +10,17 @@
   "keywords": [
     "nodejs"
   ],
-  "author": "Khang-Trung",
+  "author": "iDev4Rum",
   "license": "ISC",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.758.0",
+    "bcryptjs": "^3.0.2",
     "aws-sdk": "^2.1692.0",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "express-validator": "^7.2.1",
     "joi": "^17.13.3",
+    "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.13.2",
     "mongoose-delete": "^1.0.2",
     "multer": "^1.4.5-lts.2"
