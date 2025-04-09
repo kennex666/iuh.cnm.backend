@@ -63,5 +63,8 @@ router.post("/2fa/enable", authMiddleware, AuthController.enable2FA);
 router.post("/2fa/disable", authMiddleware, AuthController.disable2FA);
 router.get("/2fa/status", authMiddleware, AuthController.status2FA);
 
+// change password
+router.post("/change-password", authMiddleware, AuthController.changePassword);
+
 
 module.exports = router;
