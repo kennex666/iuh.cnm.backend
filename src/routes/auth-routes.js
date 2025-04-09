@@ -24,7 +24,7 @@ const validateRefreshToken = [
 
 router.post("/register", validateRegister, validateBody, AuthController.register);
 router.post("/login", validateLogin, validateBody, AuthController.login);
-router.post("/logout", authMiddleware, AuthController.logout);
+router.get("/logout", authMiddleware, AuthController.logout);
 router.get("/me", authMiddleware, AuthController.getMe);
 router.post("/refresh-token", validateRefreshToken, validateBody, AuthController.refreshToken);
 

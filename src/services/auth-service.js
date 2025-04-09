@@ -1,4 +1,5 @@
-const UserModel = require("../models/user");
+const UserModel = require("../models/user-model");
+const { generateIdSnowflake } = require("../utils/id-generators");
 const { AppError } = require("../utils/response-format");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
@@ -10,7 +11,7 @@ class AuthService {
         return jwt.sign(
             { id: userId },
             process.env.ACCESS_TOKEN_SECRET,
-            { expiresIn: process.env.JWT_EXPIRES_IN || "1h" }  // Default: 1 hr
+            { expiresIn: process.env.JWT_EXPIRES_IN || "1h", jwtid: generateIdSnowflake().toString()}  // Default: 1 hr
         );
     };
 
@@ -36,7 +37,7 @@ class AuthService {
         }
         const user = { ...dataUser, password: await this.encryptPassword(password) };
         const userResult = await UserModel.create(user);
-        return { ...userResult.toObject(), _id: userResult._id.toString() };
+        return { ...userResult.toObject(), id: userResult.id.toString() };
     }
 
     async login(phone, password) {
@@ -47,12 +48,12 @@ class AuthService {
         const isMatch = await user.comparePassword(password);
         if (!isMatch) throw new AppError("Invalid phone number or password", 401);
 
-        const accessToken = this.generateAccessToken(user._id.toString());
-        const refreshToken = this.generateRefreshToken(user._id.toString());
+        const accessToken = this.generateAccessToken(user.id.toString());
+        const refreshToken = this.generateRefreshToken(user.id.toString());
 
         user.isOnline = true;
         await user.save();
-        const userData = { ...user.toObject(), _id: user._id.toString() };
+        const userData = { ...user.toObject(), id: user.id.toString() };
         delete userData.password;
 
         return {
@@ -73,7 +74,7 @@ class AuthService {
     async getMe(userId) {
         const user = await UserModel.findById(userId).select("-password");
         if (!user) throw new AppError("User not found", 404);
-        return { ...user.toObject(), _id: user._id.toString() };
+        return { ...user.toObject(), id: user.id.toString() };
     }
 
     async refreshToken(refreshToken) {
@@ -82,7 +83,7 @@ class AuthService {
             const user = await UserModel.findById(decoded.id);
             if (!user) throw new AppError("User not found", 404);
 
-            const accessToken = this.generateAccessToken(user._id.toString());
+            const accessToken = this.generateAccessToken(user.id.toString());
             return { accessToken };
         } catch (error) {
             throw new AppError("Invalid or expired refresh token", 401);
