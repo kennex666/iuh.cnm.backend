@@ -1,9 +1,12 @@
 const twilio = require("twilio");
 const TwilioMockupClient = require("../mockup/twilio-client-mockup");
 
-const { TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN} = process.env;
+const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
+const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN;
+const TWILIO_PHONENUMBER = process.env.TWILIO_PHONENUMBER || "+84123456789"; 
 const accountSid = TWILIO_ACCOUNT_SID || "mockup_account_sid";
 const authToken = TWILIO_AUTH_TOKEN || "";
+console.log("authToken " + TWILIO_AUTH_TOKEN);
 
 let client = (!authToken) ? TwilioMockupClient(accountSid, authToken) : twilio(accountSid, authToken);
 
@@ -24,14 +27,17 @@ function generateOTP(length = 6) {
  * @param {string} phoneNumber - Số điện thoại người nhận (định dạng quốc tế, ví dụ: +84901234567)
  * @returns {Promise<string>} - Mã OTP đã gửi
  */
-async function sendOtp(phoneNumber) {
+async function sendOtp({phoneNumber, msg}) {
+    if (!phoneNumber) {
+        throw new Error("Số điện thoại không hợp lệ");
+    }
 	const otp = generateOTP();
-	const message = `Mã OTP của bạn là: ${otp}`;
+	const message = `${msg}\nMa OTP cua ban la: ${otp}`;
 
 	await client.messages.create({
 		body: message,
 		to: phoneNumber, // ví dụ: +84901234567
-		from: "YOUR_TWILIO_PHONE_NUMBER", // ví dụ: +12065551234
+		from: TWILIO_PHONENUMBER, // ví dụ: +12065551234
 	});
 
 	console.log("✅ OTP đã gửi:", otp);
@@ -40,5 +46,7 @@ async function sendOtp(phoneNumber) {
 	return otp;
 }
 
-
-// 
+module.exports = {
+    sendOtp,
+    generateOTP,
+};
