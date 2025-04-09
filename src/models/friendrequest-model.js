@@ -24,6 +24,13 @@ const friendRequestSchema = new Schema({
 friendRequestSchema.statics.findById = function (id) {
 	return this.findOne({ id: id })
 };
+friendRequestSchema.statics.findByIdAndDelete = function (id) {
+    return this.findOneAndDelete({ id: id })
+}
+
+friendRequestSchema.statics.findByIdAndUpdate = function (id, update) {
+    return this.findOneAndUpdate({ id: id }, update, { new: true });
+}
 
 friendRequestSchema.pre('save', function (next) {
     this.updateAt = Date.now();
