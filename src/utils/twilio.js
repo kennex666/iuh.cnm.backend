@@ -1,5 +1,6 @@
 const twilio = require("twilio");
 const TwilioMockupClient = require("../mockup/twilio-client-mockup");
+const { generateOTP } = require("./2fa-generator");
 
 const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
 const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN;
@@ -9,18 +10,6 @@ const authToken = TWILIO_AUTH_TOKEN || "";
 console.log("authToken " + TWILIO_AUTH_TOKEN);
 
 let client = (!authToken) ? TwilioMockupClient(accountSid, authToken) : twilio(accountSid, authToken);
-
-/**
- * Tạo mã OTP ngẫu nhiên
- * @function
- * @param {number} length - Độ dài của mã OTP (mặc định là 6)
- * @return {number} - Mã OTP ngẫu nhiên
- */
-function generateOTP(length = 6) {
-	return Math.floor(
-		Math.pow(10, length - 1) + Math.random() * 9 * Math.pow(10, length - 1)
-	);
-}
 
 /**
  * Gửi OTP qua SMS bằng Twilio

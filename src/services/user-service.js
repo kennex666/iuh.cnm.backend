@@ -1,5 +1,6 @@
 
 const UserModel = require("../models/user-model");
+const { generateOTP } = require("../utils/2fa-generator");
 const { AppError } = require("../utils/response-format");
 const S3FileManager = require("./s3-file-manager");
 
@@ -92,7 +93,7 @@ class UserService {
         const user = await UserModel.findById(userId);
         if (!user) throw new AppError("User not found", 404);
 
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otp = generateOTP();
         user.otp = {
 			code: otp,
 			expiredAt: Date.now() + 5 * 60 * 1000, // OTP valid for 5 minutes

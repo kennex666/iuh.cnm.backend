@@ -50,5 +50,6 @@ router.post("/forgot-password", (req, res) => {
 
 });
 router.post("/verify-account", validatePhone, validateBody, AuthController.verifyOtp);
+router.post("/resend-otp", validatePhone, validateBody, AuthController.resendOtp);
 
 module.exports = router;

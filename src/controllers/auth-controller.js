@@ -190,7 +190,31 @@ class AuthController {
             handleError(error, res, "Failed to verify account");
         }
     }
-            
+           
+    async resendOtp(req, res) {
+        try {
+            const { phone } = req.body;
+            if (!phone || phone.trim() === "") {
+                return responseFormat(res, null, "Phone number is required", false, 400);
+            }
+            const user = await UserService.getUserByPhone(phone);
+            if (!user) {
+                return responseFormat(res, null, "User not found", false, 404);
+            }
+            const msg = "Ban da yeu cau lay lai OTP. TUYET DOI KHONG CHIA SE MA VOI BAT KI AI\n";
+            // replace phonenumber with +84
+            const phoneNumber = user.phone.replace(/^(0)/, "+84");
+            const result = await UserService.createOTP(user.id);
+            if (!result) {
+                return responseFormat(res, null, "Failed to create OTP", false, 500);
+            }
+            const otp = result.otp.code;
+            await sendOtp({ phoneNumber, msg, otp });
+            responseFormat(res, null, "OTP resent successfully", true, 200);
+        } catch (error) {
+            handleError(error, res, "Failed to resend OTP");
+        }
+    }
 }
 
 module.exports = new AuthController();

@@ -6,6 +6,7 @@ const jwt = require("jsonwebtoken");
 const { saveTokenJWT, updateToken } = require("./jwt-token-service");
 const { parseTimeJWT } = require("../utils/date-time-formatter");
 const UserService = require("./user-service");
+const { generateOTP } = require("../utils/2fa-generator");
 
 
 
@@ -118,7 +119,7 @@ class AuthService {
 			if (!user) {
 				throw new AppError("User not found", 404);
 			}
-			const otp = Math.floor(100000 + Math.random() * 900000).toString();
+			const otp = generateOTP();
 			const otpData = await UserService.createOTP(user.id, otp);
 			if (!otpData) {
 				throw new AppError("Failed to create OTP", 500);
