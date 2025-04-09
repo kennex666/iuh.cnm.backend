@@ -1,4 +1,6 @@
-const { S3Client } = require("@aws-sdk/client-s3");
+const { S3Client } = require("@aws-sdk/client-s3");    
+const { S3ClientMock } = require("../mockup/s3-client-mockup");
+
 require("dotenv").config();
 
 const bucketName = process.env.BUCKET_NAME;
@@ -20,13 +22,21 @@ const videoMimeTypes = [
     'video/3gpp2'
 ];
 
-const s3 = new S3Client({
-    credentials: {
-        accessKeyId: accessKeyIam,
-        secretAccessKey: secretAccessKeyIam
-    },
-    region: bucketRegion
-});
+
+let s3 = null;
+
+if (!accessKeyIam || !secretAccessKeyIam) {
+	console.log("No access key or secret key provided. Using mock S3 client.");
+	s3 = new S3ClientMock(); // Giả lập client
+} else {
+	s3 = new S3Client({
+		credentials: {
+			accessKeyId: accessKeyIam,
+			secretAccessKey: secretAccessKeyIam,
+		},
+		region: bucketRegion,
+	});
+}
 
 module.exports = {
     s3,

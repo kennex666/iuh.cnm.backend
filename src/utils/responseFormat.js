@@ -17,12 +17,12 @@ const responseFormat = (res, data, message, success, statusCode, error) => {
 
     const response = {
         data: formattedData,
-        statusCode,
+        errorCode: statusCode,
         success,
-        message,
-        error
+        errorMessage: message,
+        errors: error,
     };
-    res.status(statusCode).json(response);
+    res.status(200).json(response); // trả về status 200 để fe đỡ handle exception
 };
 
 const handleError = (error, res, strMessage) => {
