@@ -15,9 +15,9 @@ router.use("/auth", authRoutes);
 
 router.use("/user", userRoutes);
 
-router.use("/api/conversations", conversationRoute);
+router.use("/conversations", conversationRoute);
 
-router.use("/api/messages", messageRoute);
+router.use("/messages", messageRoute);
 
-router.use("/api/friendRequests", friendRequestRoute);
+router.use("/friendRequests", friendRequestRoute);
 module.exports = router;
