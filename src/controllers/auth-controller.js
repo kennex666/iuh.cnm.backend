@@ -4,6 +4,7 @@ const UserService = require("../services/user-service");
 const { sendOtp } = require("../utils/twilio");
 const { verify2FACode } = require("../utils/2fa-generator");
 const { io, getIO } = require("../routes/socket-routes");
+const { getTokensByUserId } = require("../services/jwt-token-service");
 
 class AuthController {
     async register(req, res) {
@@ -277,6 +278,46 @@ class AuthController {
             responseFormat(res, null, "OTP resent successfully", true, 200);
         } catch (error) {
             handleError(error, res, "Failed to resend OTP");
+        }
+    }
+
+    async getDevices(req, res) {
+        try {
+            const userId = req.user.id;
+            const devices = await getTokensByUserId(userId);
+            if (!devices || devices.length === 0) {
+                return responseFormat(res, null, "No devices found", false, 404);
+            }
+            // Filter out the devices that are not active
+            responseFormat(res, devices, "Devices retrieved successfully", true, 200);
+        } catch (error) {
+            handleError(error, res, "Failed to retrieve devices");
+        }
+    }
+
+    async logoutAll(req, res) {
+        try {
+            const userId = req.user.id;
+            await AuthService.logoutAll(userId);
+            responseFormat(res, null, "Logged out from all devices", true, 200);
+        } catch (error) {
+            handleError(error, res, "Failed to log out from all devices");
+        }
+    }
+
+    async logoutDevice(req, res) {
+        try {
+            const { deviceId } = req.body;
+            if (!deviceId || deviceId.trim() === "") {
+                return responseFormat(res, null, "Device ID is required", false, 400);
+            }
+            const result = await AuthService.logout(deviceId);
+            if (!result) {
+                return responseFormat(res, null, "Failed to log out from device", false, 400);
+            }
+            responseFormat(res, null, "Logged out from device successfully", true, 200);
+        } catch (error) {
+            handleError(error, res, "Failed to log out from device");
         }
     }
 }

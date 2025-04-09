@@ -1,5 +1,18 @@
 const JwtTokenModel = require("../models/jwt-token-model");
 
+const getTokensByUserId = async (userId) => {
+    try {
+        const tokens = await JwtTokenModel.find({ userId, state: "active" });
+        return tokens;
+    } catch (error) {
+        if (error instanceof Error) {
+            throw new Error("Cannot get jti");
+        } else {
+            throw new Error("Unknown error");
+        }
+    }
+}
+
 const saveTokenJWT = async (data) => {
     try {
         const jwtToken = new JwtTokenModel(data);
@@ -47,7 +60,8 @@ const updateToken = async (id, data) => {
 }
 
 module.exports = {
-    saveTokenJWT,
-    getTokenById,
-    updateToken
-}
+	saveTokenJWT,
+	getTokenById,
+	updateToken,
+	getTokensByUserId,
+};

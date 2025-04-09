@@ -7,6 +7,7 @@ const { saveTokenJWT, updateToken } = require("./jwt-token-service");
 const { parseTimeJWT } = require("../utils/date-time-formatter");
 const UserService = require("./user-service");
 const { generateOTP } = require("../utils/2fa-generator");
+const JwtTokenModel = require("../models/jwt-token-model");
 
 
 
@@ -295,6 +296,16 @@ class AuthService {
 			throw new AppError("Error changing password", 500);
 		}
 	}
+
+	// logoutAll
+	async logoutAll(userId) {
+		const result = await JwtTokenModel.updateMany(
+			{ userId: userId },
+			{ state: "inactive" }
+		);
+		return { message: "Logged out from all devices" };
+	}
+
 }
 
 module.exports = new AuthService();

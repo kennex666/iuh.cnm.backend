@@ -54,4 +54,9 @@ router.post("/verify-account", validatePhone, validateBody, AuthController.verif
 router.post("/resend-otp", validatePhone, validateBody, AuthController.resendOtp);
 router.post("/login-qr", authMiddleware, AuthController.loginQR);
 
+router.get("/devices", authMiddleware, AuthController.getDevices);
+
+router.get("/logout-all", authMiddleware, AuthController.logoutAll);
+router.post("/logout-device", authMiddleware, AuthController.logoutDevice);
+
 module.exports = router;
