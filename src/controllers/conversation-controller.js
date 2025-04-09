@@ -1,35 +1,26 @@
+const { error } = require('console');
 const {getAllConversations, getConversationById, createConversation, updateConversation, deleteConversation} = require('../services/conversation-service');
-
+const {AppError,handleError,responseFormat } = require("../utils/response-format");
 const getAllConversationsController = async (req, res) => {
     try {
         const conversations = await getAllConversations(req, res);
-        res.status(200).json({
-            status:"200",
-            message:"success",
-            data: conversations
-        });
+        if (!conversations) {
+            throw new AppError("Conversations not found", 404);
+        }
+        responseFormat(res, conversations, "User retrieved successfully", true, 200);
     } catch (error) {
-        res.status(200).json({ 
-            status:"200",
-            message:error.message,
-            data: null
-         });
+        handleError(error, res, "Failed to retrieve user");
     }
 }
 const getConversationByIdController = async (req, res) => {
     try {
         const conversation = await getConversationById(req, res);
-        res.status(200).json({
-            status:"200",
-            message:"success",
-            data: conversation
-        });
+        if (!conversation) {
+            throw new AppError("Conversation not found", 404);
+        }
+        responseFormat(res, conversation, "User retrieved successfully", true, 200);
     } catch (error) {
-        res.status(200).json({ 
-            status:"200",
-            message:error.message,
-            data: null
-         });
+        handleError(error, res, "Failed to retrieve user");
     }
 }
 const createConversationController = async (req, res) => {
@@ -53,50 +44,35 @@ const createConversationController = async (req, res) => {
             adminIds,
             settings,
         });
-        res.status(200).json({
-            status:"200",
-            message:"success",
-            data: newConversation
-        });
+        if (!newConversation) {
+            throw new AppError("Failed to create conversation", 400);
+        }
+        responseFormat(res, newConversation, "Create conversation successful", true, 200);
     } catch (error) {
-        res.status(200).json({
-            status:"200",
-            message:error.message,
-            data: null
-         });
+        handleError(error, res, "Create conversation failed");
     }
 }
 
 const updateConversationController = async (req, res) => {
     try {
         const updatedConversation = await updateConversation(req, res);
-        res.status(200).json({
-            status:"200",
-            message:"success",
-            data: updatedConversation
-        });
+        if (!updatedConversation) {
+            throw new AppError("Conversation not found", 404);
+        }
+        responseFormat(res, updatedConversation, "Update conversation successful", true, 200);
     } catch (error) {
-        res.status(200).json({ 
-            status:"200",
-            message:error.message,
-            data: null
-         });
+        handleError(error, res, "Update conversation failed");
     }
 }
 const deleteConversationController = async (req, res) => {
     try {
         const deletedConversation = await deleteConversation(req, res);
-        res.status(200).json({
-            status:"200",
-            message:"success",
-            data: deletedConversation
-        });
+        if (!deletedConversation) {
+            throw new AppError("Conversation not found", 404);
+        }
+        responseFormat(res, deletedConversation, "Delete conversation successful", true, 200);
     } catch (error) {
-        res.status(200).json({ 
-            status:"200",
-            message:error.message,
-            data: null
-         });
+        handleError(error, res, "Delete conversation failed");
     }
 }
 

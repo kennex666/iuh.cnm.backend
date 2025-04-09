@@ -2,38 +2,30 @@ const { getAllFriendRequests, getFriendRequestById, createFriendRequest, updateF
     getAllAcceptedFriendRequests,getAllDeclinedFriendRequests,getAllPendingFriendRequests
  } = require("../services/friendrequest-service");
 const typeRequest = require("../models/type-request");
+const {AppError,handleError,responseFormat } = require("../utils/response-format");
+
 
 const getAllFriendRequestsController = async (req, res) => {
     try {
         const friendRequests = await getAllFriendRequests(req, res);
-        res.status(200).json({
-            status: "200",
-            message: "Get all friend requests successfully",
-            data: friendRequests,
-        });
+        if (!friendRequests) {
+            throw new AppError("Friend requests not found", 404);
+        }
+        responseFormat(res, friendRequests, "Get all friend requests successfully", true, 200);
     } catch (error) {
-        res.status(200).json({
-            status: "200",
-            message: error.message,
-            data: null,
-        });
+        handleError(error, res, "Failed to retrieve friend requests");
     }
 }
 
 const getFriendRequestByIdController = async (req, res) => {
     try {
         const friendRequest = await getFriendRequestById(req, res);
-        res.status(200).json({
-            status: "200",
-            message: "Get friend request successfully",
-            data: friendRequest,
-        });
+        if (!friendRequest) {
+            throw new AppError("Friend request not found", 404);
+        }
+        responseFormat(res, friendRequest, "Get friend request successfully", true, 200);
     } catch (error) {
-        res.status(200).json({
-            status: "200",
-            message: error.message,
-            data: null,
-        });
+        handleError(error, res, "Failed to retrieve friend request");
     }
 }
 const createFriendRequestController = async (req, res) => {
@@ -46,115 +38,80 @@ const createFriendRequestController = async (req, res) => {
             receiverId,
             status,
         });
-        res.status(200).json({
-            status: "200",
-            message: "Create friend request successfully",
-            data: newFriendRequest,
-        });
+        if (!newFriendRequest) {
+            throw new AppError("Failed to create friend request", 400);
+        }
+        responseFormat(res, newFriendRequest, "Create friend request successfully", true, 200);
     } catch (error) {
-        res.status(200).json({
-            status: "200",
-            message: error.message,
-            data: null,
-        });
+        handleError(error, res, "Create friend request failed");
     }
 }
 
 const updateFriendRequestDeclineController = async (req, res) => {
     try {
         const friendRequest = await updateFriendRequestDecline(req, res);
-        res.status(200).json({
-            status: "200",
-            message: "Update friend request successfully",
-            data: friendRequest,
-        });
+        if (!friendRequest) {
+            throw new AppError("Friend request not found", 404);
+        }
+        responseFormat(res, friendRequest, "Update friend request successfully", true, 200);
     } catch (error) {
-        res.status(200).json({
-            status: "200",
-            message: error.message,
-            data: null,
-        });
+        handleError(error, res, "Update friend request failed");
     }
 }
 const updateFriendRequestAcceptController = async (req, res) => {
     try {
         const friendRequest = await updateFriendRequestAccept(req, res);
-        res.status(200).json({
-            status: "200",
-            message: "Update friend request successfully",
-            data: friendRequest,
-        });
+        if (!friendRequest) {
+            throw new AppError("Friend request not found", 404);
+        }
+        responseFormat(res, friendRequest, "Update friend request successfully", true, 200);
     } catch (error) {
-        res.status(200).json({
-            status: "200",
-            message: error.message,
-            data: null,
-        });
+        handleError(error, res, "Update friend request failed");
     }
 }
 const deleteFriendRequestController = async (req, res) => {
     try {
         const friendRequest = await deleteFriendRequest(req, res);
-        res.status(200).json({
-            status: "200",
-            message: "Delete friend request successfully",
-            data: friendRequest,
-        });
+        if (!friendRequest) {
+            throw new AppError("Friend request not found", 404);
+        }
+        responseFormat(res, friendRequest, "Delete friend request successfully", true, 200);
     } catch (error) {
-        res.status(200).json({
-            status: "200",
-            message: error.message,
-            data: null,
-        });
+        handleError(error, res, "Delete friend request failed");
     }
 }
 
 const getAllAcceptedFriendRequestsController = async (req, res) => {
     try {
         const friendRequests = await getAllAcceptedFriendRequests(req, res);
-        res.status(200).json({
-            status: "200",
-            message: "Get all friend requests successfully",
-            data: friendRequests,
-        });
+        if (!friendRequests) {
+            throw new AppError("Friend requests not found", 404);
+        }
+        responseFormat(res, friendRequests, "Get all friend requests successfully", true, 200);
     } catch (error) {
-        res.status(200).json({
-            status: "200",
-            message: error.message,
-            data: null,
-        });
+        handleError(error, res, "Failed to retrieve friend requests");
     }
 }
 const getAllDeclinedFriendRequestsController = async (req, res) => {
     try {
         const friendRequests = await getAllDeclinedFriendRequests(req, res);
-        res.status(200).json({
-            status: "200",
-            message: "Get all friend requests successfully",
-            data: friendRequests,
-        });
+        if (!friendRequests) {
+            throw new AppError("Friend requests not found", 404);
+        }
+        responseFormat(res, friendRequests, "Get all friend requests successfully", true, 200);
     } catch (error) {
-        res.status(200).json({
-            status: "200",
-            message: error.message,
-            data: null,
-        });
+        handleError(error, res, "Failed to retrieve friend requests");
     }
 }
 const getAllPendingFriendRequestsController = async (req, res) => {
     try {
         const friendRequests = await getAllPendingFriendRequests(req, res);
-        res.status(200).json({
-            status: "200",
-            message: "Get all friend requests successfully",
-            data: friendRequests,
-        });
+        if (!friendRequests) {
+            throw new AppError("Friend requests not found", 404);
+        }
+        responseFormat(res, friendRequests, "Get all friend requests successfully", true, 200);
     } catch (error) {
-        res.status(200).json({
-            status: "200",
-            message: error.message,
-            data: null,
-        });
+        handleError(error, res, "Failed to retrieve friend requests");
     }
 }
 
