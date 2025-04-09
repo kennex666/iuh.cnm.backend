@@ -8,7 +8,7 @@ const qrcode = require("qrcode");
  */
 function generate2FASecret(name) {
 	const secret = speakeasy.generateSecret({
-		name: `iMessify (${name})`,
+		name: `iMessify`,
 		length: 32,
 	});
 	return secret;

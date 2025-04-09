@@ -306,6 +306,40 @@ class AuthService {
 		return { message: "Logged out from all devices" };
 	}
 
+	// enable2FA (secret and userId)
+
+	async enable2FA(userId, secret) {
+		try {
+			const user = await UserModel.findById(userId);
+			if (!user) {
+				throw new AppError("User not found", 404);
+			}
+			user.settings.twoFAEnabled = true;
+			user.settings.twoFASecret = secret;
+			await user.save();
+			return { ...user.toObject(), id: user.id.toString() };
+		} catch (error) {
+			console.log(error);
+			throw new AppError("Error enabling 2FA", 500);
+		}
+	}
+
+	// disable2FA (userId)
+	async disable2FA(userId) {
+		try {
+			const user = await UserModel.findById(userId);
+			if (!user) {
+				throw new AppError("User not found", 404);
+			}
+			user.settings.twoFAEnabled = false;
+			user.settings.twoFASecret = "";
+			await user.save();
+			return { ...user.toObject(), id: user.id.toString() };
+		} catch (error) {
+			console.log(error);
+			throw new AppError("Error enabling 2FA", 500);
+		}
+	}
 }
 
 module.exports = new AuthService();

@@ -59,4 +59,9 @@ router.get("/devices", authMiddleware, AuthController.getDevices);
 router.get("/logout-all", authMiddleware, AuthController.logoutAll);
 router.post("/logout-device", authMiddleware, AuthController.logoutDevice);
 
+router.post("/2fa/enable", authMiddleware, AuthController.enable2FA);
+router.post("/2fa/disable", authMiddleware, AuthController.disable2FA);
+router.get("/2fa/status", authMiddleware, AuthController.status2FA);
+
+
 module.exports = router;

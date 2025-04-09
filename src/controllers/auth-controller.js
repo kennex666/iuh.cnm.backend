@@ -320,6 +320,72 @@ class AuthController {
             handleError(error, res, "Failed to log out from device");
         }
     }
+
+    async enable2FA(req, res) {
+        try {
+            const { secret, otp } = req.body;
+            const userId = req.user.id;
+            if (!secret || secret.trim() === "") {
+                return responseFormat(res, null, "Secret is required", false, 400);
+            }
+            const check = await verify2FACode(otp, secret);
+            if (!check) {
+                return responseFormat(res, null, "Invalid OTP", false, 400);
+            }
+            const result = await AuthService.enable2FA(userId, secret);
+            if (!result) {
+                return responseFormat(res, null, "Failed to enable 2FA", false, 400);
+            }
+            responseFormat(res, result, "2FA enabled successfully", true, 200);
+        } catch (error) {
+            handleError(error, res, "Failed to enable 2FA");
+        }
+    }
+
+    async disable2FA(req, res) {
+        try {
+            const { otp } = req.body;
+            const userId = req.user.id;
+            if (!otp || otp.trim() === "") {
+                return responseFormat(res, null, "OTP is required", false, 400);
+            }
+            const user = await UserService.getUserById(userId);
+            if (!user) {
+                return responseFormat(res, null, "User not found", false, 404);
+            }
+            if (!user.settings.twoFAEnabled) {
+                return responseFormat(res, null, "Two-factor authentication is not enabled", false, 400);
+            }
+            
+            const check = await verify2FACode(otp, user.settings.twoFASecret);
+            if (!check) {
+                return responseFormat(res, null, "Invalid OTP", false, 400);
+            }
+            const result = await AuthService.disable2FA(userId);
+            if (!result) {
+                return responseFormat(res, null, "Failed to disable 2FA", false, 400);
+            }
+            responseFormat(res, null, "2FA disabled successfully", true, 200);
+        } catch (error) {
+            handleError(error, res, "Failed to disable 2FA");
+        }
+    }
+
+    async status2FA(req, res) {
+        try {
+            const userId = req.user.id;
+            const result = await UserService.getUserById(userId);
+            if (!result) {
+                return responseFormat(res, null, "Failed to get 2FA status", false, 400);
+            }
+            if (!result.settings.twoFAEnabled) {
+                return responseFormat(res, null, "Two-factor authentication is not enabled", false, 404);
+            }
+            responseFormat(res, result, "2FA status retrieved successfully", true, 200);
+        } catch (error) {
+            handleError(error, res, "Failed to get 2FA status");
+        }
+    }
 }
 
 module.exports = new AuthController();
