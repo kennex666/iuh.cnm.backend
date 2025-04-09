@@ -11,8 +11,8 @@ class AppError extends Error {
 const responseFormat = (res, data, message, success, statusCode, error) => {
     const formattedData = data
         ? Array.isArray(data)
-            ? { items: data }
-            : { item: data }
+            ? [ ...data ]
+            : { ...data }
         : {};
 
     const response = {

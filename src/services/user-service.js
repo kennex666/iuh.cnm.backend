@@ -1,5 +1,5 @@
 
-const UserModel = require("../models/user");
+const UserModel = require("../models/user-model");
 const { AppError } = require("../utils/response-format");
 const S3FileManager = require("./s3-file-manager");
 
@@ -7,7 +7,7 @@ class UserService {
     async getUserById(userId) {
         const user = await UserModel.findById(userId).select("-password");
         if (!user) throw new AppError("User not found", 404);
-        return { ...user.toObject(), _id: user._id.toString() };
+        return { ...user.toObject(), id: user.id.toString() };
     }
 
     /**
@@ -68,14 +68,14 @@ class UserService {
         }
 
         await user.save();
-        return { ...user.toObject(), _id: user._id.toString() };
+        return { ...user.toObject(), id: user.id.toString() };
     }
 
     async searchUsers(phoneQuery) {
         const users = await UserModel.find({
             phone: { $regex: phoneQuery, $options: "i" },
         }).select("-password");
-        return users.map((user) => ({ ...user.toObject(), _id: user._id.toString() }));
+        return users.map((user) => ({ ...user.toObject(), id: user.id.toString() }));
     }
 }
 

@@ -1,8 +1,9 @@
 
 const jwt = require("jsonwebtoken");
 const { AppError, handleError } = require("../utils/response-format");
+const { getTokenById } = require("../services/jwt-token-service");
 
-const authMiddleware = (req, res, next) => {
+const authMiddleware = async (req, res, next) => {
     const token = req.headers.authorization?.split(" ")[1]; // get token from "Bearer <token>"
     if (!token) {
         handleError(
@@ -13,6 +14,21 @@ const authMiddleware = (req, res, next) => {
     try {
         const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
         req.user = decoded;
+        req.jwt = {jti: decoded.jti};
+
+        const jwtToken = await getTokenById(decoded.jti);
+
+        if (!jwtToken) {
+            return handleError(
+                new AppError("Token not found on Database", 401), res, "authentication failed"
+            )
+        }
+        if (jwtToken.state != "active") {
+            return handleError(
+                new AppError("Token not active", 401), res, "authentication failed"
+            )
+        }
+
         next();
     } catch (error) {
         handleError(
