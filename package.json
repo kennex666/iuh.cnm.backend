@@ -24,7 +24,8 @@
     "mongoose": "^8.13.2",
     "mongoose-delete": "^1.0.2",
     "multer": "^1.4.5-lts.2",
-    "nodejs-snowflake": "^2.0.1"
+    "nodejs-snowflake": "^2.0.1",
+    "twilio": "^4.0.0-rc.6"
   },
   "devDependencies": {
     "@types/express": "^5.0.0",
