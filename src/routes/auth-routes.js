@@ -45,7 +45,7 @@ router.post("/forgot-password", (req, res) => {
     if (phone && otp && password) {
         return AuthController.resetPasswordOTP(req, res);
     } else if (phone && otp) {
-        return AuthController.verifyOtp(req, res);
+        return AuthController.verifyOtpValidate(req, res);
     }
     return AuthController.forgotPassword(req, res);
 

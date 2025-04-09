@@ -242,7 +242,29 @@ class AuthController {
 			handleError(error, res, "Failed to send password reset link");
 		}
 	}
+	async verifyOtpValidate(req, res) {
+		try {
+			const { phone, otp } = req.body;
 
+			if (!phone || phone.trim() === "") {
+				return responseFormat(
+					res,
+					null,
+					"Phone number is required",
+					false,
+					400
+				);
+			}
+			const result = await AuthService.verifyOtp(phone, otp);
+			if (!result) {
+				return responseFormat(res, null, "Invalid OTP", false, 400);
+			}
+			responseFormat(res, null, "OTP verified successfully", true, 200);
+		} catch (error) {
+			console.log(error);
+			handleError(error, res, "Failed to verify OTP");
+		}
+	}
 	async verifyOtp(req, res) {
 		try {
 			const { phone, otp } = req.body;
@@ -594,62 +616,70 @@ class AuthController {
 	}
 
 	// changePassword
-    async changePassword(req, res) {
-        try {
-            const { oldPassword, newPassword } = req.body;
-            const userId = req.user.id;
-            if (!oldPassword || oldPassword.trim() === "") {
-                return responseFormat(
-                    res,
-                    null,
-                    "Old password is required",
-                    false,
-                    400
-                );
-            }
-            if (!newPassword || newPassword.trim() === "") {
-                return responseFormat(
-                    res,
-                    null,
-                    "New password is required",
-                    false,
-                    400
-                );
-            }
-            // leng >6 
-            if (newPassword.length < 6) {
-                return responseFormat(
-                    res,
-                    null,
-                    "New password must be at least 6 characters long",
-                    false,
-                    400
-                );
-            }
-            
-            const result = await UserModel.findOne({ id: userId });
-            if (!result) {
-                return responseFormat(res, null, "User not found", false, 404);
-            }
-            // Check if the old password is correct
-            const isMatch = await result.comparePassword(oldPassword);
-            if (!isMatch) {
-                return responseFormat(
-                    res,
-                    null,
-                    "Invalid old password",
-                    false,
-                    401
-                );
-            }
-            const hashedPassword = await AuthService.encryptPassword(newPassword);
-            result.password = hashedPassword;
-            await result.save();
-            responseFormat(res, null, "Password changed successfully", true, 200);
-        } catch (error) {
-            handleError(error, res, "Failed to change password");
-        }
-    }
+	async changePassword(req, res) {
+		try {
+			const { oldPassword, newPassword } = req.body;
+			const userId = req.user.id;
+			if (!oldPassword || oldPassword.trim() === "") {
+				return responseFormat(
+					res,
+					null,
+					"Old password is required",
+					false,
+					400
+				);
+			}
+			if (!newPassword || newPassword.trim() === "") {
+				return responseFormat(
+					res,
+					null,
+					"New password is required",
+					false,
+					400
+				);
+			}
+			// leng >6
+			if (newPassword.length < 6) {
+				return responseFormat(
+					res,
+					null,
+					"New password must be at least 6 characters long",
+					false,
+					400
+				);
+			}
+
+			const result = await UserModel.findOne({ id: userId });
+			if (!result) {
+				return responseFormat(res, null, "User not found", false, 404);
+			}
+			// Check if the old password is correct
+			const isMatch = await result.comparePassword(oldPassword);
+			if (!isMatch) {
+				return responseFormat(
+					res,
+					null,
+					"Invalid old password",
+					false,
+					401
+				);
+			}
+			const hashedPassword = await AuthService.encryptPassword(
+				newPassword
+			);
+			result.password = hashedPassword;
+			await result.save();
+			responseFormat(
+				res,
+				null,
+				"Password changed successfully",
+				true,
+				200
+			);
+		} catch (error) {
+			handleError(error, res, "Failed to change password");
+		}
+	}
 }
 
 module.exports = new AuthController();
