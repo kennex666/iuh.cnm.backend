@@ -26,7 +26,7 @@ class AuthController {
 					500
 				);
 			}
-			const otp = user.otp.code;
+			const otp = result.otp.code;
 			await sendOtp({ phoneNumber, msg, otp });
 			responseFormat(res, null, "OTP sent successfully", true, 200);
 		} catch (error) {
