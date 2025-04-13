@@ -1,5 +1,6 @@
 
 const UserModel = require("../models/user-model");
+const { generateOTP } = require("../utils/2fa-generator");
 const { AppError } = require("../utils/response-format");
 const S3FileManager = require("./s3-file-manager");
 
@@ -72,10 +73,54 @@ class UserService {
     }
 
     async searchUsers(phoneQuery) {
+        if (!phoneQuery) throw new AppError("Phone number is required", 400);
         const users = await UserModel.find({
             phone: { $regex: phoneQuery, $options: "i" },
         }).select("-password");
         return users.map((user) => ({ ...user.toObject(), id: user.id.toString() }));
+    }
+
+    async getUserByPhone(phone) {
+        if (!phone) throw new AppError("Phone number is required", 400);
+        const user = await UserModel.findOne({
+            phone: { $regex: phone, $options: "i" },
+        }).select("-password");
+        if (!user) throw new AppError("User not found", 404);
+        return user;
+    }
+
+    async createOTP(userId) {
+        const user = await UserModel.findById(userId);
+        if (!user) throw new AppError("User not found", 404);
+
+        const otp = generateOTP();
+        user.otp = {
+			code: otp,
+			expiredAt: Date.now() + 5 * 60 * 1000, // OTP valid for 5 minutes
+			isUsed: false,
+		};
+
+        await user.save();
+        return user;
+    }
+
+    async updateOTP(userId, otp) {
+        const user = await UserModel.findById(userId);
+        if (!user) throw new AppError("User not found", 404);
+        if (!user.otp) throw new AppError("OTP not found", 404);
+
+        if (user.otp.isUsed) throw new AppError("OTP already used", 400);
+
+        if (new Date(user.otp.expiredAt) < new Date()) {
+            throw new AppError("OTP expired", 400);
+        }
+        
+        user.otp = {
+            ...user.otp,
+            ...otp
+        }
+        await user.save();
+        return user;
     }
 }
 

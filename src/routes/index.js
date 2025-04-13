@@ -4,6 +4,7 @@ const userRoutes = require("./user-routes.js");
 const friendRequestRoute = require("./friendrequest-route.js");
 const conversationRoute = require("./conversation-route");
 const messageRoute = require("./message-route.js");
+const { generate2FASecret } = require("../utils/2fa-generator.js");
 
 const router = express.Router();
 
@@ -19,5 +20,14 @@ router.use("/conversations", conversationRoute);
 
 router.use("/messages", messageRoute);
 
+
 router.use("/friendRequests", friendRequestRoute);
+
+router.use("/api/friendRequests", friendRequestRoute);
+
+router.get("/2fa/generate", (req, res) => {
+    // Generate a new 2FA secret
+    const secret = generate2FASecret();
+    res.status(200).json(secret);
+});
 module.exports = router;

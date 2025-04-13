@@ -10,6 +10,16 @@ class S3ClientMock {
 		};
 	}
 
+	async send(params) {
+		console.log("[Mock] Sending file to S3:", params);
+		// Trả về kết quả giả lập
+		return {
+			Bucket: params.Bucket,
+			Key: params.Key,
+			Location: `https://mock-s3.com/${params.Bucket}/${params.Key}`,
+		};
+	}
+
 	async getObject(params) {
 		console.log("[Mock] Getting file from S3:", params);
 		// Trả về object giả lập (ví dụ là buffer hoặc stream)

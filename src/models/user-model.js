@@ -17,15 +17,26 @@ const UserSchema = new Schema(
 		avatarUrl: {
 			type: String,
 			default:
-				"https://chat-web-application.s3.ap-southeast-1.amazonaws.com/Clock+-+Copy.jpg",
+				"default",
 		},
 		coverUrl: {
 			type: String,
 			default:
-				"https://chat-web-application.s3.ap-southeast-1.amazonaws.com/Clock+-+Copy.jpg",
+				"default",
 		},
 		dob: { type: Date, required: true },
 		isOnline: { type: Boolean, default: false },
+		isVerified: { type: Boolean, default: false },
+		settings: {
+			twoFAEnabled: { type: Boolean, default: false },
+			twoFASecret: { type: String, default: null },
+		},
+		otp: {
+			code: { type: String, default: null },
+			expiredAt: { type: Date, default: null },
+			isUsed: { type: Boolean, default: false },
+		},
+
 	},
 	{ collection: "users", timestamps: true }
 );

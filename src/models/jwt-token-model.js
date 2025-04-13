@@ -5,6 +5,7 @@ const JwtTokenSchema = new Schema({
     userId: { type: String, required: true },
     jwtId: { type: String, required: true },
     state: { type: String, enum: ["active", "inactive"], default: "active" },
+    deviceInfo: { type: Object, required: false, default: {} },
     expiredAt: { type: Date, required: true },
 }, { collection: "jwt-tokens", timestamps: true });
 

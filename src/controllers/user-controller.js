@@ -29,11 +29,7 @@ class UserController {
      */
     async updateUser(req, res) {
         try {
-            const userId = req.params.id;
-            const currentUserId = req.user.id;
-            if (userId !== currentUserId) {
-                throw new Error("You can only update your own profile", 403);
-            }
+            const userId = req.user.id;
             const updateData = req.body;
             const files = req.files;
             const updatedUser = await UserService.updateUser(userId, updateData, files);
