@@ -1,9 +1,9 @@
 const { date } = require('joi');
 const messageModel = require('../models/message-model');
 
-const getAllMessages = async (req, res) => {
+const getAllMessages = async (userId) => {
     try {
-        const messages = await messageModel.find({});
+        const messages = await messageModel.find({senderId: userId});
         return messages;
     } catch (err) {
         console.error("Error creating message:", err);
@@ -14,10 +14,12 @@ const getAllMessages = async (req, res) => {
         }
     }
 }
-const getMessageById = async (req, res) => {
+const getMessageById = async (userId, messageId) => {
     try {
-        const messageId = req.params.id;
-        const messageData = await messageModel.findById(messageId);
+        const messageData = await conversation.findOne({
+            senderId: userId,
+            id: messageId,
+        });
         return messageData;
     } catch (error) {
         console.error("Error while fetching message:", error);
@@ -27,8 +29,9 @@ const getMessageById = async (req, res) => {
 
 const getMessageByConversationId = async (req, res) => {
     try {
+        const userId = req.user.id;
         const conversationId = req.params.id;
-        const messageData = await messageModel.find({ conversationId });
+        const messageData = await messageModel.find({ senderId: userId ,conversationId });
         return messageData;
     } catch (error) {
         console.error("Error while fetching message:", error);
