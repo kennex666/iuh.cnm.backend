@@ -5,7 +5,7 @@ const { generateIdSnowflake } = require("../utils/id-generators");
 
 // Định nghĩa schema cho Message
 const messageSchema = new Schema({
-    id: { type: String },
+    id: { type: String , default: generateIdSnowflake },
     conversationId: { type: String, required: true },
     senderId: { type: String, required: true },
     content: { type: String, default: '' },

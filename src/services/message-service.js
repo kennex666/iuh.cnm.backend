@@ -24,6 +24,18 @@ const getMessageById = async (req, res) => {
         throw new Error("Không thể tìm thấy tin nhắn. Vui lòng thử lại sau.");
     }
 }
+
+const getMessageByConversationId = async (req, res) => {
+    try {
+        const conversationId = req.params.id;
+        const messageData = await messageModel.find({ conversationId });
+        return messageData;
+    } catch (error) {
+        console.error("Error while fetching message:", error);
+        throw new Error("Không thể tìm thấy tin nhắn. Vui lòng thử lại sau.");
+    }
+}
+
 const createMessage = async (data) => {
     try {
         const newMessage = new messageModel(data);
@@ -65,5 +77,6 @@ module.exports = {
     getMessageById,
     createMessage,
     updateMessage,
-    deleteMessage
+    deleteMessage,
+    getMessageByConversationId
 };
