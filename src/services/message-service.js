@@ -31,7 +31,7 @@ const getMessageByConversationId = async (req, res) => {
     try {
         const userId = req.user.id;
         const conversationId = req.params.id;
-        const messageData = await messageModel.find({ senderId: userId ,conversationId });
+        const messageData = await messageModel.find({conversationId });
         return messageData;
     } catch (error) {
         console.error("Error while fetching message:", error);

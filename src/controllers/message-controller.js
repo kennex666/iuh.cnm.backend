@@ -50,10 +50,10 @@ const createMessageController = async (req, res) => {
 const updateMessageController = async (req, res) => {
     try {
         const userId = req.user.id;
-        const message = await getMessageById(userId, req.params.id);
-        if(!message || message.senderId !== userId) {
-            throw new AppError("Message not found", 404);
-        }
+        // const message = await getMessageById(userId, req.params.id);
+        // if(!message || message.senderId !== userId) {
+        //     throw new AppError("Message not found", 404);
+        // }
         const updatedMessage = await updateMessage(req, res);
         if (!updatedMessage) {
             throw new AppError("Message not found", 404);

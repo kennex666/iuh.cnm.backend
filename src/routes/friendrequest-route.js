@@ -39,13 +39,13 @@ friendRequestRoute.delete(
     authMiddleware,
     deleteFriendRequestController
 );
-// Lấy tất cả yêu cầu kết bạn đang chờ từ người nhận
+// lời mời kết bạn gửi đến tôi mà đang PENDING
 friendRequestRoute.get(
     "/pending/receiver",
     authMiddleware,
     getAllPendingFriendRequestsByReceiverIdController
 );
-// Lấy tất cả yêu cầu kết bạn đang chờ từ người gửi
+// lời mời kết bạn tôi gửi mà đang PENDING
 friendRequestRoute.get(
     "/pending/sender",
     authMiddleware,

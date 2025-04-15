@@ -1,4 +1,5 @@
 
+const friendRequestModel = require("../models/friendrequest-model");
 const typeRequest = require("../models/type-request");
 const { createConversation } = require("../services/conversation-service");
 const { getAllFriendRequests, getFriendRequestById, createFriendRequest, updateFriendRequestDecline, getAllPendingFriendRequestsByReceiverId, getAllPendingFriendRequestsBySenderId, getAllFriendRequestAccepted, updateFriendRequestAccept } = require("../services/friendrequest-service");
@@ -36,6 +37,14 @@ const createFriendRequestController = async (req, res) => {
         const userId = req.user.id; // Lấy userId từ token
         const status = typeRequest.PENDING;
         const {receiverId} = req.body;
+        if(userId === receiverId) {
+            throw new AppError("Cannot send friend request to yourself", 400);
+        }
+        const existingFriendRequest = await friendRequestModel.findOne({receiverId: receiverId, senderId: userId});
+        console.log("existingFriendRequest:", existingFriendRequest); //
+        if (existingFriendRequest) {
+            throw new AppError("Friend request already exists", 400);
+        }
         const newFriendRequest = await createFriendRequest({
             senderId: userId,
             receiverId,
@@ -69,12 +78,6 @@ const updateFriendRequestDeclineController = async (req, res) => {
 }
 const updateFriendRequestAcceptController = async (req, res) => {
     try {
-        const userId = req.user.id;
-        const friendRequestId = req.params.id;
-        const friendRequest = await getFriendRequestById(userId, friendRequestId);
-        if (!friendRequest) {
-            throw new AppError("Friend request not found", 404);
-        }
         const updatedFriendRequest = await updateFriendRequestAccept(req, res);
         if (!updatedFriendRequest) {
             throw new AppError("Friend request not found", 404);

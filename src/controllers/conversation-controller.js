@@ -63,16 +63,16 @@ const createConversationController = async (req, res) => {
 
 const updateConversationController = async (req, res) => {
     try {
-        const userId = req.user.id; // Lấy userId từ token
-        const conversationId = req.params.id;
+        // const userId = req.user.id; // Lấy userId từ token
+        // const conversationId = req.params.id;
 
-        // Lấy cuộc trò chuyện từ database
-        const conversation = await getConversationById(userId, conversationId);
-        //Kiểm tra quyền admin
-        console.log(conversation.id);
-        if (!Array.isArray(conversation.adminIds) || !conversation.adminIds.includes(userId)) {
-            throw new AppError("You are not authorized to update this conversation", 403);
-        }
+        // // Lấy cuộc trò chuyện từ database
+        // const conversation = await getConversationById(userId, conversationId);
+        // //Kiểm tra quyền admin
+        // console.log(conversation.id);
+        // if (!Array.isArray(conversation.adminIds) || !conversation.adminIds.includes(userId)) {
+        //     throw new AppError("You are not authorized to update this conversation", 403);
+        // }
 
         const updatedConversation = await updateConversation(req,res);
 
