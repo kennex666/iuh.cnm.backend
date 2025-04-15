@@ -75,11 +75,24 @@ const deleteMessage = async (req, res) => {
     }
 }
 
+const getMessageBySenderId = async (userId) => {
+    try {
+        const messageData = await messageModel.find({
+            senderId: userId,
+        });
+        return messageData;
+    } catch (error) {
+        console.error("Error while fetching message:", error);
+        throw new Error("Không thể tìm thấy tin nhắn. Vui lòng thử lại sau.");
+    }
+}
+
 module.exports = {
     getAllMessages,
     getMessageById,
     createMessage,
     updateMessage,
     deleteMessage,
-    getMessageByConversationId
+    getMessageByConversationId,
+    getMessageBySenderId,
 };

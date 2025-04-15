@@ -1,4 +1,4 @@
-const {getAllMessages, getMessageById, createMessage, updateMessage, deleteMessage, getMessageByConversationId} = require("../services/message-service");
+const {getAllMessages, getMessageById, createMessage, updateMessage, deleteMessage, getMessageByConversationId,getMessageBySenderId} = require("../services/message-service");
 const {handleError,responseFormat,AppError } = require("../utils/response-format");
 const getAllMessagesController = async (req, res) => {
     try {
@@ -91,6 +91,20 @@ const getMessageByConversationIdController = async (req, res) => {
         handleError(error, res, "Failed to retrieve messages by conversation ID");
     }
 }
+
+const getMessageBySenderIdController = async (req, res) => {
+    try {
+        const senderId = req.params.id;
+        const message = await getMessageBySenderId(senderId);
+        if (!message) {
+            throw new AppError("Message not found", 404);
+        }
+        responseFormat(res, message, "Get message successfully", true, 200);
+    } catch (error) {
+        handleError(error, res, "Failed to retrieve message");
+    }
+}
+
 module.exports = {
     getAllMessagesController,
     getMessageByIdController,
@@ -98,4 +112,5 @@ module.exports = {
     updateMessageController,
     deleteMessageController,
     getMessageByConversationIdController,
+    getMessageBySenderIdController,
 };

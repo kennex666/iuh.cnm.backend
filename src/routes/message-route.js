@@ -1,4 +1,4 @@
-const {getAllMessagesController, getMessageByIdController, createMessageController, updateMessageController, deleteMessageController, getMessageByConversationIdController} = require('../controllers/message-controller');
+const {getAllMessagesController, getMessageByIdController, createMessageController, updateMessageController, deleteMessageController, getMessageByConversationIdController, getMessageBySenderIdController} = require('../controllers/message-controller');
 const express = require("express");
 const messageRoute = express.Router();
 const authMiddleware = require("../middlewares/auth");
@@ -15,6 +15,8 @@ messageRoute.put("/:id",authMiddleware,  updateMessageController);
 messageRoute.delete("/:id",authMiddleware,  deleteMessageController);
 //get message by conversationId
 messageRoute.get("/conversation/:id",authMiddleware,  getMessageByConversationIdController);
+//get message by senderId
+messageRoute.get("/sender/:id",authMiddleware,  getMessageBySenderIdController);
 
 module.exports = messageRoute;
 
