@@ -1,5 +1,5 @@
 const express = require("express");
-const {getAllAttachmentsController, getAttachmentByIdController, createAttachmentController, deleteAttachmentController} = require("../controllers/attachment-controller");
+const {getAllAttachmentsController, getAttachmentByIdController, createAttachmentController, deleteAttachmentController, getAttachmentByMessageIdController} = require("../controllers/attachment-controller");
 const authMiddleware = require("../middlewares/auth");
 const multer = require("multer");
 const upload = multer();
@@ -15,5 +15,7 @@ attachmentRoute.get("/:id", authMiddleware, getAttachmentByIdController);
 attachmentRoute.post("/", authMiddleware,upload.single("file") ,createAttachmentController);
 //delete attachment
 attachmentRoute.delete("/:id", authMiddleware, deleteAttachmentController);
+//get attachment by messageId
+attachmentRoute.get("/message/:id", authMiddleware, getAttachmentByMessageIdController);
 
 module.exports = attachmentRoute;

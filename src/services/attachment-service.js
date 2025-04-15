@@ -77,10 +77,22 @@ const deleteAttachment = async (req, res) => {
         
     }
 }
+const getAttachmentByMessageId = async (messageId) => {
+    try {
+        const attachmentData = await attachmentModel.find({
+            messageId: messageId,
+        });
+        return attachmentData;
+    } catch (error) {
+        console.error("Error fetching attachments by messageId:", error);
+        throw new Error("Không thể lấy tệp đính kèm theo messageId. Vui lòng thử lại sau.");
+    }
+}
 
 module.exports = {
     getAllAttachments,
     getAttachmentById,
     createAttachment,
-    deleteAttachment
+    deleteAttachment,
+    getAttachmentByMessageId
 };
