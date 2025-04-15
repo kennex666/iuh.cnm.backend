@@ -1,25 +1,67 @@
 const express = require("express");
-const { getAllFriendRequestsController, getFriendRequestByIdController, createFriendRequestController, updateFriendRequestAcceptController, updateFriendRequestDeclineController, deleteFriendRequestController, getAllPendingFriendRequestsController, getAllAcceptedFriendRequestsController, getAllDeclinedFriendRequestsController } = require("../controllers/friendRequest-controller");
+
 const authMiddleware = require("../middlewares/auth");
 const friendRequestRoute = express.Router();
+const {
+    getAllFriendRequestsController,
+    getFriendRequestByIdController,
+    createFriendRequestController,
+    updateFriendRequestDeclineController,
+    updateFriendRequestAcceptController,
+    deleteFriendRequestController,
+    getAllPendingFriendRequestsByReceiverIdController,
+    getAllPendingFriendRequestsBySenderIdController,
+    getAllFriendRequestsAcceptedController,
+    getFriendByNameOrPhoneController,
+} = require("../controllers/friendrequest-controller");
 
-//get all friend requests
+// Lấy tất cả yêu cầu kết bạn
 friendRequestRoute.get("/", authMiddleware, getAllFriendRequestsController);
-//get friend request by id
-friendRequestRoute.get("/:id",  authMiddleware,getFriendRequestByIdController);
-//save friend request
-friendRequestRoute.post("/",  authMiddleware,createFriendRequestController);
-//update friend request
-friendRequestRoute.put("/accept/:id",  authMiddleware,updateFriendRequestAcceptController);
-//update friend request
-friendRequestRoute.put("/decline/:id",  authMiddleware,updateFriendRequestDeclineController);
-//delete friend request
-friendRequestRoute.delete("/:id",  authMiddleware,deleteFriendRequestController);
-//get friend request status is pending
-friendRequestRoute.get("/pending/:id",  authMiddleware,getAllPendingFriendRequestsController);
-//get friend request status is accept
-friendRequestRoute.get("/accepted/:id",  authMiddleware,getAllAcceptedFriendRequestsController);
-//get friend request status is decline
-friendRequestRoute.get("/decline/:id",  authMiddleware,getAllDeclinedFriendRequestsController);
+// Lấy yêu cầu kết bạn theo ID
+friendRequestRoute.get("/:id", authMiddleware, getFriendRequestByIdController);
+// Tạo yêu cầu kết bạn mới
+friendRequestRoute.post("/", authMiddleware, createFriendRequestController);
+// Cập nhật yêu cầu kết bạn thành từ chối
+friendRequestRoute.put(
+    "/decline/:id",
+    authMiddleware,
+    updateFriendRequestDeclineController
+);
+// Cập nhật yêu cầu kết bạn thành chấp nhận
+friendRequestRoute.put(
+    "/accept/:id",
+    authMiddleware,
+    updateFriendRequestAcceptController
+);
+// Xóa yêu cầu kết bạn
+friendRequestRoute.delete(
+    "/:id",
+    authMiddleware,
+    deleteFriendRequestController
+);
+// Lấy tất cả yêu cầu kết bạn đang chờ từ người nhận
+friendRequestRoute.get(
+    "/pending/receiver",
+    authMiddleware,
+    getAllPendingFriendRequestsByReceiverIdController
+);
+// Lấy tất cả yêu cầu kết bạn đang chờ từ người gửi
+friendRequestRoute.get(
+    "/pending/sender",
+    authMiddleware,
+    getAllPendingFriendRequestsBySenderIdController
+);
+// Lấy tất cả yêu cầu kết bạn đã chấp nhận
+friendRequestRoute.get(
+    "/accepted/userId",
+    authMiddleware,
+    getAllFriendRequestsAcceptedController
+)
+// Tìm kiếm bạn bè theo tên hoặc số điện thoại
+friendRequestRoute.get(
+    "/search/:query",
+    authMiddleware,
+    getFriendByNameOrPhoneController
+);
 
 module.exports = friendRequestRoute;
