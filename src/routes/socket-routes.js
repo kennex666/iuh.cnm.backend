@@ -111,6 +111,7 @@ const socketRoutes = (io) => {
 		});
 
         socket.on("disconnect", () => {
+            MemoryManager.removeSocket(socket.user.id, socket.id);
             console.log(`❌ Client disconnected: ${socket.id}`);
         });
     });
