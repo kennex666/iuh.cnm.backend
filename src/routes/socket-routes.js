@@ -1,64 +1,51 @@
-const { generateString } = require("../utils/2fa-generator");
 const { Server } = require("socket.io");
-
-
-var io = null;
+const mongoose = require('mongoose');
+const SocketController = require('../controllers/socket-controller');
+const { generateString } = require("../utils/2fa-generator");
+const UserModel = require("../models/user-model");
+const jwt = require("jsonwebtoken");
+require("dotenv").config();
+let io = null;
 
 function initSocket(server, callback) {
-    io = new Server(server, {
+	io = new Server(server, {
 		path: "/socket.io",
 		cors: {
 			origin: "*",
 			methods: ["GET", "POST"],
 			allowedHeaders: ["Content-Type"],
-			credentials: true,
-		},
+			credentials: true
+		}
 	});
-    callback(io);
-    console.log("Socket.io initialized");
+	callback(io);
+	console.log("Socket.io initialized");
 }
-
 
 function getIO() {
 	if (!io) {
-		throw new Error("❌ Socket.io chưa được khởi tạo");
+		throw new Error("Socket.io chưa được khởi tạo");
 	}
 	return io;
 }
 
-const socketRoutes = (io) => {
-    io.on("connection", (socket) => {
-        socket.data = {
-            deviceCode: ""
-        };
+function socketRoutes(io) {
 
-        console.log("New client connected");
+	io.on("connection", (socket) => {
 
-        socket.on("disconnect", () => {
-            console.log("Client disconnected");
-        });
-
-        socket.on("loginQR:generate", () => {
-            console.log("Login QR code generated");
-            // Generate a random device code
-            const deviceCode = generateString(16);
-            socket.data.deviceCode = deviceCode;
-            console.log("Device code: ", deviceCode);
-            // Emit the device code to the client
-            socket.emit("loginQR:generate", {
+		// Event loginQR:generate
+		socket.on("loginQR:generate", () => {
+			const deviceCode = generateString(16);
+			socket.data.deviceCode = deviceCode;
+			socket.emit("loginQR:generate", {
 				errorCode: 200,
-				message: "Login QR code generated",
+				message: "Đã tạo mã QR đăng nhập thành công",
 				data: {
 					deviceCode: "iMessify:QRLogin_" + deviceCode,
-					socketId: socket.id,
-				},
+					socketId: socket.id
+				}
 			});
-        });
-    });
+		});
+	});
 }
 
-module.exports = {
-	initSocket,
-	socketRoutes,
-	getIO,
-};
+module.exports = { initSocket, socketRoutes, getIO };

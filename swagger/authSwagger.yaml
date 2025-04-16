@@ -1,0 +1,367 @@
+openapi: 3.0.4
+info:
+  title: Chat App API - OpenAPI 3.0
+  description: |-
+    This is the API documentation for the Chat App backend, built with Express.js and MongoDB. It provides endpoints for user authentication and management. 
+    The API uses JWT for authentication and supports file uploads to AWS S3 for user avatars and covers.
+
+    Useful links:
+    - [GitHub Repository](https://github.com/kennex666/iuh.cnm.backend.git)
+  contact:
+    email: namtrinhtrung731@gmail.com
+  version: 1.0.0
+servers:
+  - url: http://localhost:8088/api
+    description: Local development server
+tags:
+  - name: auth
+    description: Authentication operations (register, login, logout, etc.)
+  - name: user
+    description: User management operations
+paths:
+  /auth/register:
+    post:
+      tags:
+        - auth
+      summary: Register a new user
+      description: Creates a new user account with the provided details.
+      operationId: register
+      requestBody:
+        description: User data for registration
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        "400":
+          description: Invalid input or phone number already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /auth/login:
+    post:
+      tags:
+        - auth
+      summary: Login a user
+      description: Authenticates a user and returns access and refresh tokens.
+      operationId: login
+      requestBody:
+        description: Login credentials
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "401":
+          description: Invalid phone number or password
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /auth/logout:
+    post:
+      tags:
+        - auth
+      summary: Logout a user
+      description: Logs out the authenticated user by setting isOnline to false.
+      operationId: logout
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "401":
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /auth/me:
+    get:
+      tags:
+        - auth
+      summary: Get current user info
+      description: Retrieves information about the authenticated user.
+      operationId: getMe
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: User retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        "401":
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /auth/refresh-token:
+    post:
+      tags:
+        - auth
+      summary: Refresh access token
+      description: Generates a new access token using a valid refresh token.
+      operationId: refreshToken
+      requestBody:
+        description: Refresh token
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshTokenRequest"
+      responses:
+        "200":
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RefreshTokenResponse"
+        "401":
+          description: Invalid or expired refresh token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+components:
+  schemas:
+    RegisterRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: John Doe
+          description: User's full name
+        phone:
+          type: string
+          example: +84912345678
+          description: User's phone number (Vietnamese format)
+        gender:
+          type: string
+          enum: [male, female, other]
+          example: male
+          description: User's gender
+        password:
+          type: string
+          example: password123
+          description: User's password (minimum 6 characters)
+        dob:
+          type: string
+          format: date
+          example: 1990-01-01
+          description: User's date of birth (ISO 8601 format)
+      required:
+        - name
+        - phone
+        - gender
+        - password
+        - dob
+    LoginRequest:
+      type: object
+      properties:
+        phone:
+          type: string
+          example: +84912345678
+          description: User's phone number
+        password:
+          type: string
+          example: password123
+          description: User's password
+      required:
+        - phone
+        - password
+    RefreshTokenRequest:
+      type: object
+      properties:
+        refreshToken:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+          description: Refresh token issued during login
+      required:
+        - refreshToken
+    UserResponse:
+      type: object
+      properties:
+        item:
+          type: object
+          properties:
+            _id:
+              type: string
+              example: 507f1f77bcf86cd799439011
+              description: User's unique identifier
+            name:
+              type: string
+              example: John Doe
+            phone:
+              type: string
+              example: +84912345678
+            gender:
+              type: string
+              example: male
+            dob:
+              type: string
+              format: date
+              example: 1990-01-01
+            isOnline:
+              type: boolean
+              example: true
+            avatarUrl:
+              type: string
+              example: https://bucket.s3.region.amazonaws.com/chatApp-images/avatar.jpg
+            coverUrl:
+              type: string
+              example: https://bucket.s3.region.amazonaws.com/chatApp-images/cover.jpg
+            createdAt:
+              type: string
+              format: date-time
+              example: 2025-04-06T00:00:00Z
+            updatedAt:
+              type: string
+              format: date-time
+              example: 2025-04-06T00:00:00Z
+    LoginResponse:
+      type: object
+      properties:
+        item:
+          type: object
+          properties:
+            accessToken:
+              type: string
+              example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+              description: JWT access token
+            refreshToken:
+              type: string
+              example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+              description: JWT refresh token
+            user:
+              $ref: "#/components/schemas/UserResponse/properties/item"
+    RefreshTokenResponse:
+      type: object
+      properties:
+        item:
+          type: object
+          properties:
+            accessToken:
+              type: string
+              example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+              description: New JWT access token
+    SuccessResponse:
+      type: object
+      properties:
+        data:
+          oneOf:
+            - type: object
+            - type: array
+          description: Data is array
+        statusCode:
+          type: integer
+          example: 201
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Create successful
+      required:
+        - statusCode
+        - success
+        - message
+    ErrorResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+        statusCode:
+          type: integer
+          example: 400
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: Invalid input
+        error:
+          oneOf:
+            - type: string
+            - type: array
+          example: Detailed error message
+      required:
+        - statusCode
+        - success
+        - message
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "JWT Authorization header using the Bearer scheme. Example: 'Authorization: Bearer {token}'"

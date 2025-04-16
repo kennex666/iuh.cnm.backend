@@ -1,8 +1,8 @@
-const { getAllFriendRequests, getFriendRequestById, createFriendRequest, updateFriendRequestDecline,updateFriendRequestAccept, deleteFriendRequest,
-    getAllAcceptedFriendRequests,getAllDeclinedFriendRequests,getAllPendingFriendRequests
- } = require("../services/friendrequest-service");
+const { getAllFriendRequests, getFriendRequestById, createFriendRequest, updateFriendRequestDecline, updateFriendRequestAccept, deleteFriendRequest,
+    getAllAcceptedFriendRequests, getAllDeclinedFriendRequests, getAllPendingFriendRequests
+} = require("../services/friendrequest-service");
 const typeRequest = require("../models/type-request");
-const {AppError,handleError,responseFormat } = require("../utils/response-format");
+const { AppError, handleError, responseFormat } = require("../utils/response-format");
 
 
 const getAllFriendRequestsController = async (req, res) => {
@@ -31,7 +31,7 @@ const getFriendRequestByIdController = async (req, res) => {
 const createFriendRequestController = async (req, res) => {
     try {
         const status = typeRequest.PENDING;
-        const { id, senderId, receiverId} = req.body;
+        const { id, senderId, receiverId } = req.body;
         const newFriendRequest = await createFriendRequest({
             id,
             senderId,
