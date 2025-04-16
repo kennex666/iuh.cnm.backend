@@ -63,7 +63,7 @@ function socketRoutes(io) {
 		// Listen for events after connection
 		// Even disconnect
 		socket.on("disconnect", async () => {
-			await SocketController.handleDisconnect(io, socket);
+			await SocketController.handleDisconnect(socket);
 		});
 
 		// Event message:send
