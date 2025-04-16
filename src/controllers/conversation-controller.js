@@ -87,16 +87,16 @@ const updateConversationController = async (req, res) => {
 };
 const deleteConversationController = async (req, res) => {
     try {
-        const userId = req.user.id; // Lấy userId từ token
-        const conversationId = req.params.id;
+        // const userId = req.user.id; // Lấy userId từ token
+        // const conversationId = req.params.id;
 
-        // Lấy cuộc trò chuyện từ database
-        const conversation = await getConversationById(userId,conversationId);
+        // // Lấy cuộc trò chuyện từ database
+        // const conversation = await getConversationById(userId,conversationId);
 
-        // Kiểm tra quyền admin
-        if (!conversation || !conversation.adminIds.includes(userId)) {
-            throw new AppError("You are not authorized to delete this conversation", 403);
-        }
+        // // Kiểm tra quyền admin
+        // if (!conversation || !conversation.adminIds.includes(userId)) {
+        //     throw new AppError("You are not authorized to delete this conversation", 403);
+        // }
 
         const deletedConversation = await deleteConversation(req,res);
 

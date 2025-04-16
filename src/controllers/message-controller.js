@@ -65,11 +65,11 @@ const updateMessageController = async (req, res) => {
 }
 const deleteMessageController = async (req, res) => {
     try {
-        const userId = req.user.id; 
-        const message = await getMessageById(userId, req.params.id);
-        if(!message || message.senderId !== userId) {
-            throw new AppError("Message not found", 404);
-        }
+        // const userId = req.user.id; 
+        // const message = await getMessageById(userId, req.params.id);
+        // if(!message || message.senderId !== userId) {
+        //     throw new AppError("Message not found", 404);
+        // }
         const deletedMessage = await deleteMessage(req, res);
         if (!deletedMessage) {
             throw new AppError("Message not found", 404);

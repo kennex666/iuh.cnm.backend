@@ -2,7 +2,7 @@
 const friendRequestModel = require("../models/friendrequest-model");
 const typeRequest = require("../models/type-request");
 const { createConversation } = require("../services/conversation-service");
-const { getAllFriendRequests, getFriendRequestById, createFriendRequest, updateFriendRequestDecline, getAllPendingFriendRequestsByReceiverId, getAllPendingFriendRequestsBySenderId, getAllFriendRequestAccepted, updateFriendRequestAccept } = require("../services/friendrequest-service");
+const { getAllFriendRequests, getFriendRequestById, createFriendRequest, updateFriendRequestDecline, getAllPendingFriendRequestsByReceiverId, getAllPendingFriendRequestsBySenderId, getAllFriendRequestAccepted, updateFriendRequestAccept, deleteFriendRequest } = require("../services/friendrequest-service");
 const {AppError,handleError,responseFormat } = require("../utils/response-format");
 
 
@@ -61,12 +61,12 @@ const createFriendRequestController = async (req, res) => {
 
 const updateFriendRequestDeclineController = async (req, res) => {
     try {
-        const userId = req.user.id;
-        const friendRequestId = req.params.id;
-        const friendRequest = await getFriendRequestById(userId, friendRequestId);
-        if (!friendRequest) {
-            throw new AppError("Friend request not found", 404);
-        }
+        // const userId = req.user.id;
+        // const friendRequestId = req.params.id;
+        // const friendRequest = await getFriendRequestById(userId, friendRequestId);
+        // if (!friendRequest) {
+        //     throw new AppError("Friend request not found", 404);
+        // }
         const updatedFriendRequest = await updateFriendRequestDecline(req, res);
         if (!updatedFriendRequest) {
             throw new AppError("Friend request not found", 404);
@@ -82,15 +82,15 @@ const updateFriendRequestAcceptController = async (req, res) => {
         if (!updatedFriendRequest) {
             throw new AppError("Friend request not found", 404);
         }
-        const { senderId, receiverId } = updatedFriendRequest;
+        const { senderId, receiverId,name,avatar } = updatedFriendRequest;
         console.log("senderId:", senderId); // 
         console.log("receiverId:", receiverId);
         
         const newConversation = await createConversation({
             isGroup: false,
             participants: [senderId, receiverId],
-            name: null,
-            avatar: null,
+            name: name,
+            avatar: avatar,
             adminIds: [],
             settings: {}
         });
@@ -109,12 +109,12 @@ const updateFriendRequestAcceptController = async (req, res) => {
 }
 const deleteFriendRequestController = async (req, res) => {
     try {
-        const userId = req.user.id;
-        const friendRequestId = req.params.id;
-        const friendRequest = await getFriendRequestById(userId, friendRequestId);
-        if (!friendRequest) {
-            throw new AppError("Friend request not found", 404);
-        }
+        // const userId = req.user.id;
+        // const friendRequestId = req.params.id;
+        // const friendRequest = await getFriendRequestById(userId, friendRequestId);
+        // if (!friendRequest) {
+        //     throw new AppError("Friend request not found", 404);
+        // }
         const deletedFriendRequest = await deleteFriendRequest(req, res);
         if (!deletedFriendRequest) {
             throw new AppError("Friend request not found", 404);
