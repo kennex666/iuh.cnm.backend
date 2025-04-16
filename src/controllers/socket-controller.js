@@ -16,7 +16,16 @@ class SocketController {
         }
         // Join user to all participated conversations
         await SocketService.joinConversationRooms(socket);
+    }
 
+    static async handleDisconnect(socket) {
+        const user = socket.user;
+        console.log(`User disconnected: ${user.name} (${user.id})`);
+        // Update isOnline when user disconnects
+        if (user.isOnline) {
+            await User.findOneAndUpdate({ id: socket.user.id }, { isOnline: false });
+            await SocketService.broadcastStatus(socket, false);
+        }
     }
 }
 

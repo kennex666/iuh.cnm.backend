@@ -29,8 +29,42 @@ function getIO() {
 }
 
 function socketRoutes(io) {
+	io.use(async (socket, next) => {
+		try {
+			// check token exists
+			const token = socket.handshake.query.token || socket.handshake.token;
+			if (!token) {
+				throw new Error('No token provided');
+			}
+			// verify token
+			const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+			const userId = decoded?.id;
+			if (!userId) {
+				throw new Error('Invalid userId');
+			}
+			// check user exists
+			const user = await UserModel.findOne({ id: userId });
+			if (!user) {
+				throw new Error(`User not found: ${userId}`);
+			}
+
+			socket.user = { id: user.id, name: user.name, isOnline: user.isOnline };
+			next();
+		} catch (error) {
+			console.error(`Authentication failed: ${error.message}`);
+			next(new Error(`Authentication failed: ${error.message}`));
+		}
+	});
 
 	io.on("connection", (socket) => {
+		// Event connection, handle on connection
+		SocketController.handleConnection(socket);
+
+		// Listen for events after connection
+		// Even disconnect
+		socket.on("disconnect", async () => {
+			await SocketController.handleDisconnect(io, socket);
+		});
 
 		// Event loginQR:generate
 		socket.on("loginQR:generate", () => {
