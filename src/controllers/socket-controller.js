@@ -3,6 +3,7 @@ const Conversation = require('../models/conversation-model');
 const User = require('../models/user-model');
 const SocketService = require('../services/socket-service');
 const MemoryManager = require('../utils/memory-manager');
+const { createMessage } = require('../services/message-service');
 
 class SocketController {
 
@@ -28,7 +29,7 @@ class SocketController {
                 throw new Error('You do not have permission to send messages in this conversation');
             }
 
-            const message = await messageModel.create({
+            const message = await createMessage({
 				conversationId: conversationId,
 				senderId: userId,
 				content,
@@ -41,7 +42,7 @@ class SocketController {
             const participants = conversation.participants.map(participant => participant.toString());
             participants.forEach(participant => {
                 MemoryManager.getSocketList(participant).forEach((socketId) => {
-                        io.to(socketId).emit('message:new', message);
+                    io.to(socketId).emit('message:new', message);
                 });
             });
         } catch (error) {

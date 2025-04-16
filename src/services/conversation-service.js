@@ -3,8 +3,25 @@ const conversation = require('../models/conversation-model');
 const getAllConversations = async (userId) => {
     try {
 
-        const conversations = await conversation.find({participants: { $in: [userId] }});
-        return conversations;
+        const conversations = await conversation
+			.find({ participants: { $in: [userId] } })
+			.populate({
+				path: "lastMessage",
+				options: { strictPopulate: false }, // 💡 không lỗi nếu không có
+			});
+
+        const sortedConversations = conversations
+			.sort((a, b) => {
+				const aDate = a.lastMessage?.sentAt
+					? new Date(a.lastMessage.sentAt)
+					: 0;
+				const bDate = b.lastMessage?.sentAt
+					? new Date(b.lastMessage.sentAt)
+					: 0;
+				return bDate - aDate;
+			});
+        
+        return sortedConversations;
     } catch (error) {
         console.error("Error fetching conversations:", error);
         if (error instanceof Error) {
@@ -19,6 +36,9 @@ const getConversationById = async (userId, conversationId) => {
         const conversationData = await conversation.findOne({
             participants: { $in: [userId] },
             id: conversationId,
+        }).populate({
+            path: 'lastMessage',
+            options: { strictPopulate: false } // 💡 không lỗi nếu không có
         });
         return conversationData;
     } catch (error) {
