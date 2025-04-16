@@ -1,8 +1,9 @@
 const conversation = require('../models/conversation-model');
 
-const getAllConversations = async (req, res) => {
+const getAllConversations = async (userId) => {
     try {
-        const conversations = await conversation.find({});
+
+        const conversations = await conversation.find({participants: { $in: [userId] }});
         return conversations;
     } catch (error) {
         console.error("Error fetching conversations:", error);
@@ -13,10 +14,12 @@ const getAllConversations = async (req, res) => {
         }
     }
 }
-const getConversationById = async (req, res) => {
+const getConversationById = async (userId, conversationId) => {
     try {
-        const conversationId = req.params.id;
-        const conversationData = await conversation.findById(conversationId);
+        const conversationData = await conversation.findOne({
+            participants: { $in: [userId] },
+            id: conversationId,
+        });
         return conversationData;
     } catch (error) {
         console.error("Error fetching conversation:", error);

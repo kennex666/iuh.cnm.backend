@@ -1,24 +1,28 @@
 const { Server } = require("socket.io");
 const mongoose = require('mongoose');
 const SocketController = require('../controllers/socket-controller');
-const { generateString } = require("../utils/2fa-generator");
 const UserModel = require("../models/user-model");
+const messageModel = require("../models/message-model");
 const jwt = require("jsonwebtoken");
-require("dotenv").config();
+const friendRequestModel = require("../models/friendrequest-model");
+const { createFriendRequest } = require("../services/friendrequest-service");
+const typeRequest = require("../models/type-request");const { authSocketMiddleware } = require("../middlewares/auth");
+const MemoryManager = require("../utils/memory-manager");
 let io = null;
 
 function initSocket(server, callback) {
-	io = new Server(server, {
-		path: "/socket.io",
-		cors: {
-			origin: "*",
-			methods: ["GET", "POST"],
-			allowedHeaders: ["Content-Type"],
-			credentials: true
-		}
-	});
-	callback(io);
-	console.log("Socket.io initialized");
+    io = new Server(server, {
+        path: "/socket.io",
+        cors: {
+            origin: "*",
+            methods: ["GET", "POST"],
+            allowedHeaders: ["Content-Type", "Authorization"],
+            credentials: true,
+        },
+    });
+
+    callback(io);
+    console.log("Socket.io initialized");
 }
 
 function getIO() {
@@ -28,56 +32,71 @@ function getIO() {
 	return io;
 }
 
-function socketRoutes(io) {
-	io.use(async (socket, next) => {
-		try {
-			// check token exists
-			const token = socket.handshake.query.token || socket.handshake.token;
-			if (!token) {
-				throw new Error('No token provided');
-			}
-			// verify token
-			const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-			const userId = decoded?.id;
-			if (!userId) {
-				throw new Error('Invalid userId');
-			}
-			// check user exists
-			const user = await UserModel.findOne({ id: userId });
-			if (!user) {
-				throw new Error(`User not found: ${userId}`);
-			}
+const socketRoutes = (io) => {
 
-			socket.user = { id: user.id, name: user.name, isOnline: user.isOnline };
-			next();
-		} catch (error) {
-			console.error(`Authentication failed: ${error.message}`);
-			next(new Error(`Authentication failed: ${error.message}`));
-		}
-	});
+	io.use(authSocketMiddleware);
 
-	io.on("connection", (socket) => {
-		// Event connection, handle on connection
-		SocketController.handleConnection(socket);
+    io.on("connection", (socket) => {
+        console.log(`✅ New client connected: ${socket.id}`);
 
-		// Listen for events after connection
-		// Even disconnect
-		socket.on("disconnect", async () => {
-			await SocketController.handleDisconnect(socket);
-		});
+        // Add to list user
+        MemoryManager.addSocketToUser(socket.user.id, socket.id);
 
+        socket.on('ping', (data) => {
+            console.log('Ping received:', data);
+            socket.emit('pong', { message: 'Pong from server' });
+        });
+
+        socket.join(socket.user.id);
+
+        // socket.on('join_conversation', (conversationId) => {
+        //     console.log("join_conversation:", conversationId);
+        //     socket.join(conversationId);
+        // });
+
+        // socket.on('leave_conversation', (conversationId) => {
+        //     console.log("leave_conversation:", conversationId);
+        //     socket.leave(conversationId);
+        // });
+
+        
 		// Event message:send
 		/**
 		 * @param {Object} data
 		 * @param {string} data.conversationId 
 		 * @param {string} data.content 
+         * @param {string} data.type
+         * @param {string} data.repliedTold
+         * 
 		 */
 		socket.on("message:send", async (data) => {
 			console.log("data send from client", data);
 			await SocketController.handleSendMessage(io, socket, data);
 		});
 
-		// Event loginQR:generate
+        // not handled yet
+        socket.on("message:delete_message", (data) => {
+            console.log("send_delete_message:", data);
+            const { messageId } = data;
+        });
+
+        socket.on("send_friend_request", async (data) => {
+            console.log("send_friend_request:", data);
+            if(data.senderId !== socket.user.id) {
+                return;
+            }
+            const { receiverId } = data;
+            if(receiverId === socket.user.id) {
+                console.log("Không thể gửi lời mời kết bạn cho chính mình");
+                return;
+            };
+            const socketList = MemoryManager.getSocketList(receiverId);
+            socketList.forEach(socketId => {
+                io.to(socketId).emit("friend_request", data);
+            });
+        });
+
+        // Event loginQR:generate
 		socket.on("loginQR:generate", () => {
 			const deviceCode = generateString(16);
 			socket.data.deviceCode = deviceCode;
@@ -90,7 +109,15 @@ function socketRoutes(io) {
 				}
 			});
 		});
-	});
+
+        socket.on("disconnect", () => {
+            console.log(`❌ Client disconnected: ${socket.id}`);
+        });
+    });
 }
 
-module.exports = { initSocket, socketRoutes, getIO };
+module.exports = {
+    initSocket,
+    socketRoutes,
+    getIO,
+};

@@ -2,6 +2,7 @@ const messageModel = require('../models/message-model');
 const Conversation = require('../models/conversation-model');
 const User = require('../models/user-model');
 const SocketService = require('../services/socket-service');
+const MemoryManager = require('../utils/memory-manager');
 
 class SocketController {
 
@@ -12,7 +13,8 @@ class SocketController {
                 throw new Error('Data message invalid: conversationId and content are required');
             }
 
-            const { conversationId, content } = data;
+            const { conversationId, content, type, repliedTold } = data;
+
             const userId = socket.user.id;
 
             // Get conversation
@@ -27,19 +29,36 @@ class SocketController {
             }
 
             const message = await messageModel.create({
-                conversationId: conversationId,
-                senderId: userId,
-                content,
-                type: "text"
-            });
+				conversationId: conversationId,
+				senderId: userId,
+				content,
+				type,
+				repliedTold,
+			});
             console.log(`Message created:`, message);
 
-            socket.to(`conversation:${conversationId}`).emit('message:new', message);
-            console.log(`Message sent to room conversation:${conversationId} (excluding sender)`);
+            // get all participants of conversation
+            const participants = conversation.participants.map(participant => participant.toString());
+            participants.forEach(participant => {
+                MemoryManager.getSocketList().forEach((socketId, userId) => {
+                    if (userId === participant) {
+                        io.to(socketId).emit('message:new', message);
+                    }
+                });
+            });
         } catch (error) {
             console.error(`Error sending message: ${error.message}`);
             throw error;
         }
+    }
+
+    static async broadcastStatus(socket, isOnline) {
+        const user = socket.user;
+        const status = {
+            userId: user.id,
+            isOnline: isOnline,
+        };
+        socket.broadcast.emit('user:status', status);
     }
 
     static async handleConnection(socket) {
@@ -52,7 +71,6 @@ class SocketController {
         }
         // Join user to all participated conversations
         await SocketService.joinConversationRooms(socket);
-
     }
 
     static async handleDisconnect(socket) {

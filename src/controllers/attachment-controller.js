@@ -1,4 +1,4 @@
-const {getAllAttachments, getAttachmentById, createAttachment, deleteAttachment} = require('../services/attachment-service');
+const {getAllAttachments, getAttachmentById, createAttachment, deleteAttachment,getAttachmentByMessageId} = require('../services/attachment-service');
 const {AppError,handleError,responseFormat } = require("../utils/response-format");
 
 const getAllAttachmentsController = async (req, res) => {
@@ -66,9 +66,23 @@ const deleteAttachmentController = async (req, res) => {
     }
 }
 
+const getAttachmentByMessageIdController = async (req, res) => {
+    try {
+        const messageId = req.params.id;
+        const attachmentData = await getAttachmentByMessageId(messageId);
+        if (!attachmentData) {
+            throw new AppError("Attachment not found", 404);
+        }
+        responseFormat(res, attachmentData, "Attachment retrieved successfully", true, 200);
+    } catch (error) {
+        handleError(error, res, "Failed to retrieve attachment");
+    }
+};
+
 module.exports = {
     getAllAttachmentsController,
     getAttachmentByIdController,
     createAttachmentController,
-    deleteAttachmentController
+    deleteAttachmentController,
+    getAttachmentByMessageIdController
 };

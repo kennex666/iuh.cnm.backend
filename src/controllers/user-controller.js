@@ -51,6 +51,18 @@ class UserController {
             handleError(error, res, "Failed to search users");
         }
     }
+    async searchUsersByPhone(req, res) {
+        try {
+            const phoneQuery = req.params.q;
+            if (!phoneQuery) {
+                throw new Error("Phone number query is required", 400);
+            }
+            const users = await UserService.getUserByPhone(phoneQuery);
+            responseFormat(res, users, "Users found successfully", true, 200);
+        } catch (error) {
+            handleError(error, res, "Failed to search users");
+        }
+    }
 }
 
 module.exports = new UserController();

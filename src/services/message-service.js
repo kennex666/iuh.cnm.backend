@@ -1,9 +1,9 @@
 const { date } = require('joi');
 const messageModel = require('../models/message-model');
 
-const getAllMessages = async (req, res) => {
+const getAllMessages = async (userId) => {
     try {
-        const messages = await messageModel.find({});
+        const messages = await messageModel.find({senderId: userId});
         return messages;
     } catch (err) {
         console.error("Error creating message:", err);
@@ -14,16 +14,34 @@ const getAllMessages = async (req, res) => {
         }
     }
 }
-const getMessageById = async (req, res) => {
+const getMessageById = async (userId, messageId) => {
     try {
-        const messageId = req.params.id;
-        const messageData = await messageModel.findById(messageId);
+        const messageData = await conversation.findOne({
+            senderId: userId,
+            id: messageId,
+        });
         return messageData;
     } catch (error) {
         console.error("Error while fetching message:", error);
         throw new Error("Không thể tìm thấy tin nhắn. Vui lòng thử lại sau.");
     }
 }
+
+const getMessageByConversationId = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const conversationId = req.params.id;
+        const number = req.query.number
+        const messageData = await messageModel.find({conversationId })
+        .sort({createdAt: -1})
+        .limit(number);
+        return messageData;
+    } catch (error) {
+        console.error("Error while fetching message:", error);
+        throw new Error("Không thể tìm thấy tin nhắn. Vui lòng thử lại sau.");
+    }
+}
+
 const createMessage = async (data) => {
     try {
         const newMessage = new messageModel(data);
@@ -60,10 +78,24 @@ const deleteMessage = async (req, res) => {
     }
 }
 
+const getMessageBySenderId = async (userId) => {
+    try {
+        const messageData = await messageModel.find({
+            senderId: userId,
+        });
+        return messageData;
+    } catch (error) {
+        console.error("Error while fetching message:", error);
+        throw new Error("Không thể tìm thấy tin nhắn. Vui lòng thử lại sau.");
+    }
+}
+
 module.exports = {
     getAllMessages,
     getMessageById,
     createMessage,
     updateMessage,
-    deleteMessage
+    deleteMessage,
+    getMessageByConversationId,
+    getMessageBySenderId,
 };
