@@ -36,6 +36,18 @@ const getMessageByConversationId = async (req, res) => {
         const messageData = await messageModel.find({conversationId })
         .sort({createdAt: -1})
         .limit(number);
+        
+        // update readBy first
+        // messageData[].readBy = messageData.readBy || [];
+        // if (!messageData.readBy.includes(userId)) {
+        //     messageData.readBy.push(userId);
+        // }
+        if (messageData.length > 0) {
+            await messageModel.updateMany(
+                { conversationId },
+                { $addToSet: { readBy: userId } }
+            );
+        }
         return messageData;
     } catch (error) {
         console.error("Error while fetching message:", error);
@@ -45,6 +57,7 @@ const getMessageByConversationId = async (req, res) => {
 
 const createMessage = async (data) => {
     try {
+        data.readBy = [data.senderId]; // Đảm bảo rằng người gửi luôn có trong danh sách readBy
         const newMessage = new messageModel(data);
         const message = await newMessage.save();
         await conversation.updateOne(

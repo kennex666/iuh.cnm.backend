@@ -10,8 +10,19 @@ const getAllConversations = async (userId) => {
 				options: { strictPopulate: false }, // 💡 không lỗi nếu không có
 			});
 
+        // if not have lastMessage, set lastMessage.sentAt = updatedAt
+
         const sortedConversations = conversations
-			.sort((a, b) => {
+			.map(
+                (conversation) => ({
+                    ...conversation.toObject(),
+                    lastMessage: conversation.lastMessage || {
+                        sentAt: conversation.updatedAt,
+                        content: "Hãy gửi lời chào đến người bạn này nào!",
+                        type: "text",
+                    },
+                })
+            ).sort((a, b) => {
 				const aDate = a.lastMessage?.sentAt
 					? new Date(a.lastMessage.sentAt)
 					: 0;

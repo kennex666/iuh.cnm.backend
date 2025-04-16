@@ -104,6 +104,7 @@ const updateFriendRequestAcceptController = async (req, res) => {
             adminIds: [],
             settings: {}
         });
+        
         return res.status(200).json({
             success: true,
             message: "Đã chấp nhận yêu cầu kết bạn và tạo cuộc trò chuyện",
