@@ -1,11 +1,14 @@
 const { Server } = require("socket.io");
+const mongoose = require('mongoose');
+const SocketController = require('../controllers/socket-controller');
+const UserModel = require("../models/user-model");
 const messageModel = require("../models/message-model");
 const jwt = require("jsonwebtoken");
 const friendRequestModel = require("../models/friendrequest-model");
 const { createFriendRequest } = require("../services/friendrequest-service");
-const typeRequest = require("../models/type-request");
-
-var io = null;
+const typeRequest = require("../models/type-request");const { authSocketMiddleware } = require("../middlewares/auth");
+const MemoryManager = require("../utils/memory-manager");
+let io = null;
 
 function initSocket(server, callback) {
     io = new Server(server, {
@@ -32,16 +35,13 @@ function getIO() {
 const users = new Map();
 
 const socketRoutes = (io) => {
+    io.use(authSocketMiddleware);
 
     io.on("connection", (socket) => {
         console.log(`✅ New client connected: ${socket.id}`);
 
-        console.log("Socket:", socket.handshake.auth.token);
-        const decoded = jwt.verify(socket.handshake.auth.token, process.env.ACCESS_TOKEN_SECRET);
-        socket.user = decoded;
-
-        users.set(socket.user.id, socket.id);
-        console.log("users:", users);
+        // Add to list user
+        MemoryManager.addSocketToUser(socket.user.id, socket.id);
 
         socket.on('ping', (data) => {
             console.log('Ping received:', data);
@@ -50,53 +50,36 @@ const socketRoutes = (io) => {
 
         socket.join(socket.user.id);
 
-        socket.on('join_conversation', (conversationId) => {
-            console.log("join_conversation:", conversationId);
-            socket.join(conversationId);
-        });
+        // socket.on('join_conversation', (conversationId) => {
+        //     console.log("join_conversation:", conversationId);
+        //     socket.join(conversationId);
+        // });
 
-        socket.on('leave_conversation', (conversationId) => {
-            console.log("leave_conversation:", conversationId);
-            socket.leave(conversationId);
-        });
+        // socket.on('leave_conversation', (conversationId) => {
+        //     console.log("leave_conversation:", conversationId);
+        //     socket.leave(conversationId);
+        // });
 
-        socket.on("send_message", (data) => {
-            console.log("Message received:", data);
+        
+		// Event message:send
+		/**
+		 * @param {Object} data
+		 * @param {string} data.conversationId 
+		 * @param {string} data.content 
+         * @param {string} data.type
+         * @param {string} data.repliedTold
+         * 
+		 */
+		socket.on("message:send", async (data) => {
+			console.log("data send from client", data);
+			await SocketController.handleSendMessage(io, socket, data);
+		});
 
-            const { conversationId, senderId, content, type, repliedTold } = data;
-            if(senderId !== socket.user.id) {
-                return;
-            }
-            // Kiểm tra loại tin nhắn hợp lệ
-            if (type !== "text" && type !== "image" && type !== "file") {
-                console.error("Invalid message type:", type);
-                return;
-            }
-
-            console.log("conversationId:", conversationId);
-            // Lưu tin nhắn vào MongoDB
-            const newMessage = new messageModel({
-                conversationId,
-                senderId,
-                content,
-                type,
-                repliedTold,
-            });
-
-            newMessage.save()
-                .then(() => {
-                    io.to(conversationId).emit("new_message", newMessage);
-                })
-                .catch((error) => {
-                    console.error("Error saving message:", error);
-                });
-        });
-
-        socket.on("send_delete_message", (data) => {
+        // not handled yet
+        socket.on("message:delete_message", (data) => {
             console.log("send_delete_message:", data);
             const { messageId } = data;
         });
-
         socket.on("send_friend_request", async (data) => {
             console.log("send_friend_request:", data);
             if(data.senderId !== socket.user.id) {
@@ -107,14 +90,28 @@ const socketRoutes = (io) => {
                 console.log("Không thể gửi lời mời kết bạn cho chính mình");
                 return;
             };
-            console.log("users:", users);
-            const userSocketId = users.get(receiverId);
-            if(userSocketId) {
-                io.to(userSocketId).emit("friend_request", data);
-            }
+            const socketList = MemoryManager.getSocketList(receiverId);
+            socketList.forEach(socketId => {
+                io.to(socketId).emit("friend_request", data);
+            });
         });
 
+        // Event loginQR:generate
+		socket.on("loginQR:generate", () => {
+			const deviceCode = generateString(16);
+			socket.data.deviceCode = deviceCode;
+			socket.emit("loginQR:generate", {
+				errorCode: 200,
+				message: "Đã tạo mã QR đăng nhập thành công",
+				data: {
+					deviceCode: "iMessify:QRLogin_" + deviceCode,
+					socketId: socket.id
+				}
+			});
+		});
+
         socket.on("disconnect", () => {
+            MemoryManager.removeSocket(socket.user.id, socket.id);
             console.log(`❌ Client disconnected: ${socket.id}`);
         });
     });
