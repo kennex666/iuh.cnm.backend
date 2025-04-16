@@ -6,7 +6,7 @@ const getAllConversations = async (userId) => {
         const conversations = await conversation.find({participants: { $in: [userId] }});
         return conversations;
     } catch (error) {
-       console.error("Error fetching conversations:", error);
+        console.error("Error fetching conversations:", error);
         if (error instanceof Error) {
             throw new Error("Không thể lấy danh sách cuộc trò chuyện. Vui lòng thử lại sau.");
         } else {
@@ -77,5 +77,5 @@ module.exports = {
     getConversationById,
     createConversation,
     updateConversation,
-    deleteConversation
+    deleteConversation,
 }

@@ -1,9 +1,15 @@
+const { getAllFriendRequests, getFriendRequestById, createFriendRequest, updateFriendRequestDecline, updateFriendRequestAccept, deleteFriendRequest,
+    getAllAcceptedFriendRequests, getAllDeclinedFriendRequests, getAllPendingFriendRequests,
+    getAllFriendRequestAccepted,
+    getAllPendingFriendRequestsBySenderId,
+    getFriendByNameOrPhone,
+    getAllPendingFriendRequestsByReceiverId
+} = require("../services/friendrequest-service");
+const typeRequest = require("../models/type-request");
+const { AppError, handleError, responseFormat } = require("../utils/response-format");
 
 const friendRequestModel = require("../models/friendrequest-model");
-const typeRequest = require("../models/type-request");
 const { createConversation } = require("../services/conversation-service");
-const { getAllFriendRequests, getFriendRequestById, createFriendRequest, updateFriendRequestDecline, getAllPendingFriendRequestsByReceiverId, getAllPendingFriendRequestsBySenderId, getAllFriendRequestAccepted, updateFriendRequestAccept, deleteFriendRequest } = require("../services/friendrequest-service");
-const {AppError,handleError,responseFormat } = require("../utils/response-format");
 
 
 const getAllFriendRequestsController = async (req, res) => {
@@ -36,8 +42,9 @@ const createFriendRequestController = async (req, res) => {
     try {
         const userId = req.user.id; // Lấy userId từ token
         const status = typeRequest.PENDING;
-        const {receiverId} = req.body;
-        if(userId === receiverId) {
+        const { receiverId } = req.body;
+        if(userId == receiverId) {
+
             throw new AppError("Cannot send friend request to yourself", 400);
         }
         const existingFriendRequest = await friendRequestModel.findOne({receiverId: receiverId, senderId: userId});
