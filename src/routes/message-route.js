@@ -15,7 +15,7 @@ messageRoute.put("/:id",  updateMessageController);
 //delete message
 messageRoute.delete("/:id",  deleteMessageController);
 //get message by conversationId
-messageRoute.get("/conversation/:id/:number",  getMessageByConversationIdController);
+messageRoute.get("/conversation/:id",  getMessageByConversationIdController);
 //get message by senderId
 messageRoute.get("/sender/:id",  getMessageBySenderIdController);
 

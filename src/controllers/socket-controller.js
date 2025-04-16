@@ -40,10 +40,8 @@ class SocketController {
             // get all participants of conversation
             const participants = conversation.participants.map(participant => participant.toString());
             participants.forEach(participant => {
-                MemoryManager.getSocketList().forEach((socketId, userId) => {
-                    if (userId === participant) {
+                MemoryManager.getSocketList(participant).forEach((socketId) => {
                         io.to(socketId).emit('message:new', message);
-                    }
                 });
             });
         } catch (error) {

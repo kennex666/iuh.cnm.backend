@@ -31,10 +31,8 @@ const getMessageByConversationId = async (req, res) => {
     try {
         const userId = req.user.id;
         const conversationId = req.params.id;
-        const number = req.query.number
         const messageData = await messageModel.find({conversationId })
         .sort({createdAt: -1})
-        .limit(number);
         return messageData;
     } catch (error) {
         console.error("Error while fetching message:", error);
