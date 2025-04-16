@@ -40,7 +40,10 @@ const createFriendRequestController = async (req, res) => {
         if(userId === receiverId) {
             throw new AppError("Cannot send friend request to yourself", 400);
         }
-        const existingFriendRequest = await friendRequestModel.findOne({receiverId: receiverId, senderId: userId});
+        const existingFriendRequest = await friendRequestModel.findOne({$or:[
+            { senderId: userId, receiverId: receiverId },
+            { senderId: receiverId, receiverId: userId },
+        ]});
         console.log("existingFriendRequest:", existingFriendRequest); //
         if (existingFriendRequest) {
             throw new AppError("Friend request already exists", 400);

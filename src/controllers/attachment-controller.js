@@ -1,6 +1,7 @@
+const typeMessage = require('../models/type-message');
 const {getAllAttachments, getAttachmentById, createAttachment, deleteAttachment,getAttachmentByMessageId} = require('../services/attachment-service');
 const {AppError,handleError,responseFormat } = require("../utils/response-format");
-
+const {createMessage} = require('../services/message-service');
 const getAllAttachmentsController = async (req, res) => {
     try {
         const attachments = await getAllAttachments(req, res);
@@ -28,9 +29,8 @@ const getAttachmentByIdController = async (req, res) => {
 
 const createAttachmentController = async (req, res) => {
     try {
-        const { id, messageId } = req.body;
-
-        if (!req.file || !messageId) {
+        
+        if (!req.file) {
             throw new AppError("Tệp đính kèm không được tìm thấy", 400);
 
         }
@@ -41,7 +41,22 @@ const createAttachmentController = async (req, res) => {
             contentType: req.file.mimetype
         };
 
-        const attachment = await createAttachment({ id, messageId, file });
+        const userId = req.user.id; // Lấy userId từ token
+        const conversationId = req.params.conversationId;
+        console.log("conversationId:", conversationId); // In ra conversationId để kiểm tra
+        console.log(file.fileName); // In ra userId để kiểm tra
+        const repliedTold = req.body.repliedTold || null; // Lấy repliedTold từ body hoặc gán null nếu không có
+        const readBy = [userId]; // Mảng chứa userId của người gửi tin nhắn
+        const newMessage = await createMessage({
+                    conversationId,
+                    senderId: userId,
+                    content: file.fileName,
+                    type: typeMessage.FILE,
+                    repliedTold,
+                    readBy,
+                });
+        const messageId = newMessage.id; // Lấy messageId từ message mới tạo
+        const attachment = await createAttachment({messageId, file });
 
         if (!attachment) {
             throw new AppError("Tệp đính kèm không được tạo", 400);

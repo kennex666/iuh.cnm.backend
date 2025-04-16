@@ -12,7 +12,7 @@ attachmentRoute.get("/", authMiddleware, getAllAttachmentsController);
 //get attachment by id
 attachmentRoute.get("/:id", authMiddleware, getAttachmentByIdController);
 //save attachment
-attachmentRoute.post("/", authMiddleware,upload.single("file") ,createAttachmentController);
+attachmentRoute.post("/:conversationId", authMiddleware,upload.single("file") ,createAttachmentController);
 //delete attachment
 attachmentRoute.delete("/:id", authMiddleware, deleteAttachmentController);
 //get attachment by messageId
