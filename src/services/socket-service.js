@@ -2,10 +2,11 @@ const mongoose = require('mongoose');
 const Conversation = require('../models/conversation-model');
 
 class SocketService {
-    static async broadcastStatus(socket, isOnline, options = {}) {
+    // Broadcast user status (online/offline) to all participants in private conversations
+    static async broadcastStatus(socket, isOnline) {
         const userId = socket.user.id;
         const conversations = await this.getConversations(userId, { type: 'private' });
-        console.log("Danh sách trò chuyện private: ", conversations);
+        console.log("list conversation private: ", conversations);
 
         if (conversations.length > 0) {
             conversations.forEach(conversation => {
@@ -15,7 +16,7 @@ class SocketService {
             });
         }
     }
-
+    // get all conversation of user
     static async getConversations(userId, filter = {}) {
         if (!userId) {
             throw new Error('Invalid user ID');
@@ -28,11 +29,10 @@ class SocketService {
 
         return await Conversation.find(query).select('id participants isGroup');
     }
-
-    static async joinConversationRooms(socket, options = {}) {
-        const { filter } = options;
-        const conversations = await this.getConversations(socket.user.id.toString(), filter);
-        console.log("Danh sách trò chuyện: ", conversations);
+    // join user to room
+    static async joinConversationRooms(socket) {
+        const conversations = await this.getConversations(socket.user.id.toString());
+        console.log("list conversation: ", conversations);
 
         if (conversations.length > 0) {
             await Promise.all(
