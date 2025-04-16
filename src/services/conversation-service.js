@@ -13,16 +13,16 @@ const getAllConversations = async (userId) => {
         // if not have lastMessage, set lastMessage.sentAt = updatedAt
 
         const sortedConversations = conversations
-			.map(
-                (conversation) => ({
-                    ...conversation.toObject(),
-                    lastMessage: conversation.lastMessage || {
-                        sentAt: conversation.updatedAt,
-                        content: "Hãy gửi lời chào đến người bạn này nào!",
-                        type: "text",
-                    },
-                })
-            ).sort((a, b) => {
+			.map((conversation) => ({
+				...conversation.toObject(),
+				lastMessage: conversation.lastMessage || {
+					sentAt: conversation.updatedAt,
+					content: "Hãy gửi lời chào đến người bạn này nào!",
+					type: "text",
+					readBy: [userId]
+				},
+			}))
+			.sort((a, b) => {
 				const aDate = a.lastMessage?.sentAt
 					? new Date(a.lastMessage.sentAt)
 					: 0;
