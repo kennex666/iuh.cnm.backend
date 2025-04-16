@@ -14,7 +14,8 @@ attachmentRoute.get("/", getAllAttachmentsController);
 //get attachment by id
 attachmentRoute.get("/:id", getAttachmentByIdController);
 //save attachment
-attachmentRoute.post("/",upload.single("file") ,createAttachmentController);
+attachmentRoute.post("/:conversationId", authMiddleware,upload.single("file") ,createAttachmentController);
+
 //delete attachment
 attachmentRoute.delete("/:id", deleteAttachmentController);
 //get attachment by messageId
