@@ -1,6 +1,7 @@
 const express = require("express");
 const {getAllAttachmentsController, getAttachmentByIdController, createAttachmentController, deleteAttachmentController, getAttachmentByMessageIdController} = require("../controllers/attachment-controller");
 const {authMiddleware} = require("../middlewares/auth");
+
 const multer = require("multer");
 const upload = multer();
 const attachmentRoute = express.Router();

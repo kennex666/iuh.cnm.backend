@@ -4,7 +4,7 @@ const messageRoute = express.Router();
 const {authMiddleware} = require("../middlewares/auth");
 
 messageRoute.use(authMiddleware);
-//get all messages
+
 messageRoute.get("/" , getAllMessagesController);
 //get message by id
 messageRoute.get("/:id",  getMessageByIdController);

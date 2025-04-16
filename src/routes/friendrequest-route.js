@@ -1,4 +1,5 @@
 const express = require("express");
+
 const { authMiddleware } = require("../middlewares/auth");
 const friendRequestRoute = express.Router();
 const {

@@ -26,15 +26,16 @@ function initSocket(server, callback) {
 }
 
 function getIO() {
-	if (!io) {
-		throw new Error("Socket.io chưa được khởi tạo");
-	}
-	return io;
+    if (!io) {
+        throw new Error("❌ Socket.io chưa được khởi tạo");
+    }
+    return io;
 }
 
-const socketRoutes = (io) => {
+const users = new Map();
 
-	io.use(authSocketMiddleware);
+const socketRoutes = (io) => {
+    io.use(authSocketMiddleware);
 
     io.on("connection", (socket) => {
         console.log(`✅ New client connected: ${socket.id}`);
@@ -79,7 +80,6 @@ const socketRoutes = (io) => {
             console.log("send_delete_message:", data);
             const { messageId } = data;
         });
-
         socket.on("send_friend_request", async (data) => {
             console.log("send_friend_request:", data);
             if(data.senderId !== socket.user.id) {

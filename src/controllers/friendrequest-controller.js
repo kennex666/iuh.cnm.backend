@@ -44,6 +44,7 @@ const createFriendRequestController = async (req, res) => {
         const status = typeRequest.PENDING;
         const { receiverId } = req.body;
         if(userId == receiverId) {
+
             throw new AppError("Cannot send friend request to yourself", 400);
         }
         const existingFriendRequest = await friendRequestModel.findOne({receiverId: receiverId, senderId: userId});
