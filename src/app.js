@@ -6,6 +6,7 @@ const router = require("./routes");
 const PORT = process.env.PORT || 8087;
 const HOST = process.env.HOST_NAME;
 const { socketRoutes, initSocket } = require("./routes/socket-routes");
+const webrtcRoutes = require("./routes/webrtc-route");
 
 (async () => {
 	try {
@@ -19,6 +20,7 @@ const { socketRoutes, initSocket } = require("./routes/socket-routes");
 		});
 
 		app.use(corsMiddleware);
+		app.use("/call", webrtcRoutes);
 		app.use("/api", router);
 		server.listen(PORT, HOST, () => {
 			console.log(`Server is listening on port ${PORT}`);

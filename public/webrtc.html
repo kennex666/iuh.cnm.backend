@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>WebRTC Web Client</title>
+  <style>
+        /* #localVideo {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        width: 100px;
+        height: 150px;
+        object-fit: cover;
+        border: 2px solid white;
+            background: black;
+        border-radius: 8px;
+        z-index: 10;
+        } */
+  </style>
+  <script src="https://cdn.tailwindcss.com/"></script>
+</head>
+<body class="bg-gray-900">
+    <div class="flex flex-row items-center justify-center"  style="min-height: 100vh;">
+        <div class="grid grid-cols-2 gap-6 w-full px-12" >
+            <video id="remoteVideo" class="bg-black w-full" autoplay playsinline> </video>
+            <video id="localVideo" class="bg-black w-full" autoplay playsinline muted></video>
+        </div>
+    </div>
+    <div class="fixed bottom-0 left-0 right-0 bg-gray-800 p-4">
+        <div class="flex flex-row items-center justify-center mt-4">
+            <button class="bg-blue-500 text-white px-4 py-2 rounded">Tắt cam</button>
+            <button class="bg-green-500 text-white px-4 py-2 rounded ml-4">Tắt tiếng</button>
+            <button class="bg-red-500 text-white px-4 py-2 rounded ml-4">Rời phòng</button>
+        </div>
+    </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const ROOM_ID = prompt("Nhập Room ID:") || "bao-room";
+    const socket = io();
+    let myId = null;
+    let peerId = null;
+    const pc = new RTCPeerConnection();
+
+    const localVideo = document.getElementById('localVideo');
+    const remoteVideo = document.getElementById('remoteVideo');
+
+    // Handle ICE
+    pc.onicecandidate = (event) => {
+      if (event.candidate && peerId) {
+        socket.emit('signal', {
+          targetId: peerId,
+          data: { type: 'candidate', candidate: event.candidate }
+        });
+      }
+    };
+
+    // Handle remote stream
+    pc.ontrack = (event) => {
+      remoteVideo.srcObject = event.streams[0];
+    };
+
+    // Start camera
+    async function startLocalStream() {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      stream.getTracks().forEach(track => pc.addTrack(track, stream));
+      localVideo.srcObject = stream;
+      return stream;
+    }
+
+    // Join room
+    socket.on('connect', async () => {
+      myId = socket.id;
+      console.log('🔗 Connected with ID:', myId);
+      socket.emit('join-room', ROOM_ID);
+      await startLocalStream();
+    });
+
+    // Có người trong phòng → chủ động gửi offer
+    socket.on('room-users', async (users) => {
+      if (users.length == 2) {
+        peerId = users[0];
+        console.log('📞 Calling to:', peerId);
+
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        socket.emit('signal', {
+          targetId: peerId,
+          data: { type: 'offer', sdp: offer }
+        });
+      } 
+    });
+
+    // Có người mới vào → lưu peerId nếu chưa có
+    socket.on('user-joined', (newId) => {
+      if (!peerId && newId !== myId) {
+        peerId = newId;
+        console.log('👋 User joined:', newId);
+      }
+    });
+
+    // Nhận tín hiệu từ peer
+    socket.on('signal', async ({ from, data }) => {
+      peerId = from;
+      if (data.type === 'offer') {
+        await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        socket.emit('signal', {
+          targetId: from,
+          data: { type: 'answer', sdp: answer }
+        });
+      } else if (data.type === 'answer') {
+        await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+      } else if (data.type === 'candidate') {
+        await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+      }
+    });
+
+    socket.on('user-left', (id) => {
+      console.warn('❌ User left:', id);
+      if (id === peerId) {
+        remoteVideo.srcObject = null;
+        peerId = null;
+      }
+    });
+  </script>
+</body>
+</html>
