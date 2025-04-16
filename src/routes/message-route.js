@@ -14,7 +14,7 @@ messageRoute.put("/:id",authMiddleware,  updateMessageController);
 //delete message
 messageRoute.delete("/:id",authMiddleware,  deleteMessageController);
 //get message by conversationId
-messageRoute.get("/conversation/:id",authMiddleware,  getMessageByConversationIdController);
+messageRoute.get("/conversation/:id/:number",authMiddleware,  getMessageByConversationIdController);
 //get message by senderId
 messageRoute.get("/sender/:id",authMiddleware,  getMessageBySenderIdController);
 
