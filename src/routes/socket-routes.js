@@ -120,6 +120,54 @@ const socketRoutes = (io) => {
             MemoryManager.removeSocket(socket.user.id, socket.id);
             console.log(`❌ Client disconnected: ${socket.id}`);
         });
+
+        socket.on("message:delete_message", (data) => {
+			console.log("send_delete_message:", data);
+			const { messageId } = data;
+		});
+
+		socket.on("friend_request:send", async (data) => {
+			console.log("send_friend_request:", data);
+			if (data.senderId !== socket.user.id) {
+				return;
+			}
+			const { receiverId } = data;
+			if (receiverId === socket.user.id) {
+				console.log("Không thể gửi lời mời kết bạn cho chính mình");
+				return;
+			}
+			const socketList = MemoryManager.getSocketList(receiverId);
+			socketList.forEach((socketId) => {
+				io.to(socketId).emit("friend_request:new", data);
+			});
+		});
+
+		socket.on("friend_request:send_accept", (data) => {
+			console.log("send_accept_friend_request:", data);
+			const { senderId } = data;
+			if (senderId !== socket.user.id) {
+				return;
+			}
+			const { receiverId } = data;
+			const socketList = MemoryManager.getSocketList(receiverId);
+			socketList.forEach((socketId) => {
+				io.to(socketId).emit("friend_request:new_accept", data);
+			});
+		});
+
+		socket.on("friend_request:delete", (data) => {
+			console.log("send_remove_friend_request:", data);
+			const { senderId } = data;
+			if (senderId !== socket.user.id) {
+				return;
+			}
+			const { receiverId } = data;
+			const socketList = MemoryManager.getSocketList(receiverId);
+			console.log("socketList", socketList);
+			socketList.forEach((socketId) => {
+				io.to(socketId).emit("friend_request:new_delete", data);
+			});
+		});
     });
 }
 
