@@ -66,6 +66,17 @@ function socketRoutes(io) {
 			await SocketController.handleDisconnect(io, socket);
 		});
 
+		// Event message:send
+		/**
+		 * @param {Object} data
+		 * @param {string} data.conversationId 
+		 * @param {string} data.content 
+		 */
+		socket.on("message:send", async (data) => {
+			console.log("data send from client", data);
+			await SocketController.handleSendMessage(io, socket, data);
+		});
+
 		// Event loginQR:generate
 		socket.on("loginQR:generate", () => {
 			const deviceCode = generateString(16);
