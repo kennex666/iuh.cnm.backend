@@ -30,17 +30,31 @@
         <div class="flex flex-row items-center justify-center mt-4">
             <button class="bg-blue-500 text-white px-4 py-2 rounded">Tắt cam</button>
             <button class="bg-green-500 text-white px-4 py-2 rounded ml-4">Tắt tiếng</button>
-            <button class="bg-red-500 text-white px-4 py-2 rounded ml-4">Rời phòng</button>
+            <button onclick="hangUp()" class="bg-red-500 text-white px-4 py-2 rounded ml-4">Rời phòng</button>
         </div>
     </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    const ROOM_ID = prompt("Nhập Room ID:") || "bao-room";
-    const socket = io();
+    const urlParts = window.location.pathname.split('/');
+
+    const conversationId = urlParts[3];
+    const userId = urlParts[4];
+    const messageId = urlParts[5];
+
+    console.log("conversationId:", conversationId);
+    console.log("userId:", userId);
+    console.log("messageId:", messageId);
+
+    const ROOM_ID = conversationId + "_room_" + messageId;
+    const socket = io("/webrtc");
     let myId = null;
     let peerId = null;
-    const pc = new RTCPeerConnection();
+    const pc = new RTCPeerConnection({
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' }
+      ]
+    });
 
     const localVideo = document.getElementById('localVideo');
     const remoteVideo = document.getElementById('remoteVideo');
@@ -91,6 +105,13 @@
       } 
     });
 
+    // Reconnect
+    socket.on('disconnect', () => {
+      console.warn("⚠️ Mất kết nối socket");
+      alert("Kết nối bị mất. Vui lòng tải lại trang.");
+      location.reload();
+    });
+
     // Có người mới vào → lưu peerId nếu chưa có
     socket.on('user-joined', (newId) => {
       if (!peerId && newId !== myId) {
@@ -124,6 +145,18 @@
         peerId = null;
       }
     });
+
+  function hangUp() {
+    if (pc) {
+      pc.getSenders().forEach(sender => pc.removeTrack(sender));
+      pc.close();
+    }
+    remoteVideo.srcObject = null;
+    localVideo.srcObject?.getTracks().forEach(track => track.stop());
+    socket.disconnect();
+    window.location.href = "/"; // hoặc redirect về đâu đó
+  }
+
   </script>
 </body>
 </html>

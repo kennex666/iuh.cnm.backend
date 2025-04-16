@@ -61,6 +61,26 @@ const getConversationById = async (userId, conversationId) => {
         }
     }
 }
+
+const getConversationByCvsId = async(conversationId) => {
+    try {
+        const conversationData = await conversation.findOne({
+            id: conversationId,
+        }).populate({
+            path: 'lastMessage',
+            options: { strictPopulate: false } // 💡 không lỗi nếu không có
+        });
+        return conversationData;
+    } catch (error) {
+        console.error("Error fetching conversation:", error);
+        if (error instanceof Error) {
+            throw new Error("Không thể lấy cuộc trò chuyện. Vui lòng thử lại sau.");
+        } else {
+            throw new Error("Lỗi không xác định. Vui lòng thử lại sau.");
+        }
+    }
+}
+
 const createConversation = async (data) => {
     try {
         const newConversation = new conversation(data);
@@ -104,9 +124,10 @@ const deleteConversation = async (req, res) => {
 }
 
 module.exports = {
-    getAllConversations,
-    getConversationById,
-    createConversation,
-    updateConversation,
-    deleteConversation,
-}
+	getAllConversations,
+	getConversationById,
+	createConversation,
+	updateConversation,
+	deleteConversation,
+	getConversationByCvsId,
+};
