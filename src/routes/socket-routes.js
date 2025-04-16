@@ -8,6 +8,7 @@ const friendRequestModel = require("../models/friendrequest-model");
 const { createFriendRequest } = require("../services/friendrequest-service");
 const typeRequest = require("../models/type-request");const { authSocketMiddleware } = require("../middlewares/auth");
 const MemoryManager = require("../utils/memory-manager");
+const { updateSeen } = require("../services/message-service");
 let io = null;
 
 function initSocket(server, callback) {
@@ -73,6 +74,11 @@ const socketRoutes = (io) => {
 		socket.on("message:send", async (data) => {
 			console.log("data send from client", data);
 			await SocketController.handleSendMessage(io, socket, data);
+		});
+
+        socket.on("message:seen", async (messageId) => {
+			console.log("message:seen:", messageId);
+			await updateSeen(messageId, socket.user.id);
 		});
 
         // not handled yet

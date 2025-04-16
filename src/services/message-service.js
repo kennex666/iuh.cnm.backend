@@ -75,6 +75,25 @@ const createMessage = async (data) => {
     }
 }
 
+const updateSeen = async ( messageId, userId) => {
+    try {
+        const message = await messageModel.findById(messageId);
+        if (!message) {
+            throw new Error("Message not found");
+        }
+        if (!message.readBy) {
+            message.readBy = [];
+        }
+        if (!message.readBy.includes(userId)) {
+            message.readBy.push(userId);
+        }
+        await message.save();
+    } catch (error) {
+        console.error("Error while updating seen status:", error);
+        throw new Error("Không thể cập nhật trạng thái đã xem. Vui lòng thử lại sau.");
+    }
+}
+
 const updateMessage = async (req, res) => {
     try {
         const messageId = req.params.id;
@@ -114,11 +133,12 @@ const getMessageBySenderId = async (userId) => {
 }
 
 module.exports = {
-    getAllMessages,
-    getMessageById,
-    createMessage,
-    updateMessage,
-    deleteMessage,
-    getMessageByConversationId,
-    getMessageBySenderId,
+	getAllMessages,
+	getMessageById,
+	createMessage,
+	updateMessage,
+	deleteMessage,
+	getMessageByConversationId,
+	getMessageBySenderId,
+	updateSeen,
 };
