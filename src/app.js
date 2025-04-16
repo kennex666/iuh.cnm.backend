@@ -20,7 +20,7 @@ const webrtcRoutes = require("./routes/webrtc-route");
 		});
 
 		app.use(corsMiddleware);
-		app.use("/call", webrtcRoutes);
+		app.use("/webrtc", webrtcRoutes);
 		app.use("/api", router);
 		server.listen(PORT, HOST, () => {
 			console.log(`Server is listening on port ${PORT}`);

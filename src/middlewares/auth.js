@@ -7,7 +7,7 @@ const UserModel = require("../models/user-model");
 const authMiddleware = async (req, res, next) => {
     const token = req.headers.authorization?.split(" ")[1]; // get token from "Bearer <token>"
     if (!token) {
-        handleError(
+        return handleError(
             new AppError("No token provided", 401), res, "authentication failed"
         )
     }

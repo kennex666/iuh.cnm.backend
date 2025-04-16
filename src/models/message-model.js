@@ -9,7 +9,7 @@ const messageSchema = new Schema({
     conversationId: { type: String, required: true },
     senderId: { type: String, required: true },
     content: { type: String, default: '' },
-    type: { type: String, enum: typeMessage,require:true}, //type: 'text' | 'image' | 'file' | 'reaction'
+    type: { type: String, enum: typeMessage,require:true}, //type: 'text' | 'image' | 'file' | 'reaction' | 'call'
     repliedTold:{ type: String, default: '' },
     sentAt: { type: Date, default: Date.now },
     readBy: { type: Array, default: [] },
