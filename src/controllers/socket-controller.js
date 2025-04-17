@@ -5,6 +5,7 @@ const SocketService = require('../services/socket-service');
 const MemoryManager = require('../utils/memory-manager');
 const { createMessage } = require('../services/message-service');
 const { createAttachment } = require("../services/attachment-service");
+const typeMessage = require('../models/type-message');
 
 
 class SocketController {
@@ -17,7 +18,7 @@ class SocketController {
 				);
 			}
 
-			const { conversationId, content, type, repliedTold } = data;
+			const { conversationId, content, type, repliedTold, repliedToId} = data;
 
 			const userId = socket.user.id;
 
@@ -43,7 +44,7 @@ class SocketController {
 				senderId: userId,
 				content,
 				type,
-				repliedTold,
+				repliedTold: repliedTold || repliedToId,
 			});
 			console.log(`Message created:`, message);
 

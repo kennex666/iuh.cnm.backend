@@ -225,15 +225,16 @@ const socketWebRTC = (io) => {
 			console.log(`👥 Room ${roomId} has:`, [...rooms[roomId]]);
 
 			// Gửi danh sách user hiện tại cho client vừa vào
-			io.to(roomId).emit("room-users", [...rooms[roomId]]);
+			socket.emit("room-users", [...rooms[roomId]]);
 
 			// Gửi thông báo cho các peer trong phòng (trừ chính mình)
-			// socket.to(roomId).emit("user-joined", socket.id);
+			socket.to(roomId).emit("user-joined", socket.id);
 		});
 
 		// Gửi signal từ A → B (1-1)
 		socket.on("signal", ({ targetId, data }) => {
-			io.to(targetId).emit("signal", {
+			console.log(`📡 ${socket.id} sent signal to ${targetId}:`, data);
+			io.of("/webrtc").to(targetId).emit("signal", {
 				from: socket.id,
 				data,
 			});
@@ -241,21 +242,21 @@ const socketWebRTC = (io) => {
 
 		// Rời phòng
 		socket.on("disconnecting", () => {
-			// conversationId + "_room_" + messageId
 			const roomId = socket.roomId;
-			const conversationID  = roomId.split("_")[0];
+			if (!roomId) return;
+
+			const conversationID = roomId.split("_")[0];
 			const messageId = roomId.split("_")[2];
-			for (const roomId of socket.rooms) {
-				if (rooms[roomId]) {
-					rooms[roomId].delete(socket.id);
-					socket.to(roomId).emit("user-left", socket.id);
 
-					if (rooms[roomId].size === 0) {
-						delete rooms[roomId]; // xoá room nếu rỗng
-					}
+			if (rooms[roomId]) {
+				rooms[roomId].delete(socket.id);
+				socket.to(roomId).emit("user-left", socket.id);
 
-					exitRoom(conversationID, 1);
+				if (rooms[roomId].size === 0) {
+					delete rooms[roomId]; // xoá room nếu rỗng
 				}
+
+				exitRoom(conversationID, 1); // 👈 gọi hàm cleanup riêng của em
 			}
 		});
 
@@ -268,12 +269,10 @@ const socketWebRTC = (io) => {
 const exitRoom = async (conversationId, userId) => {
 	const conversation = await getConversationByCvsId(conversationId);
 	if (!conversation) {
-		return res
-			.status(200)
-			.json({
-				errorMessage: "conversationId không hợp lệ",
-				errorCode: 100,
-			});
+		return {
+			errorMessage: "Cuộc trò chuyện không tồn tại",
+			errorCode: 100,
+		}
 	}
 	// Check if the user is a participant in the conversation
 	// if dataMessage type is "call" and content is "start" then create a new message
@@ -289,21 +288,17 @@ const exitRoom = async (conversationId, userId) => {
 		.limit(1);
 
 	if (!recentlyMessage) {
-		return res
-			.status(200)
-			.json({
-				errorMessage: "Cuộc gọi chưa được bắt đầu",
-				errorCode: 100,
-			});
+		return {
+			errorMessage: "Cuộc gọi không tồn tại",
+			errorCode: 100,
+		}
 	}
 
 	if (recentlyMessage.content != "start") {
-		return res
-			.status(200)
-			.json({
-				errorMessage: "Cuộc gọi chưa được bắt đầu",
-				errorCode: 100,
-			});
+		return {
+			errorMessage: "Cuộc gọi chưa được bắt đầu",
+			errorCode: 100,
+		}
 	}
 
 	const dataMessage = {
