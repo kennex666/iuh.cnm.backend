@@ -3,8 +3,36 @@ const conversation = require('../models/conversation-model');
 const getAllConversations = async (userId) => {
     try {
 
-        const conversations = await conversation.find({participants: { $in: [userId] }});
-        return conversations;
+        const conversations = await conversation
+			.find({ participants: { $in: [userId] } })
+			.populate({
+				path: "lastMessage",
+				options: { strictPopulate: false }, // 💡 không lỗi nếu không có
+			});
+
+        // if not have lastMessage, set lastMessage.sentAt = updatedAt
+
+        const sortedConversations = conversations
+			.map((conversation) => ({
+				...conversation.toObject(),
+				lastMessage: conversation.lastMessage || {
+					sentAt: conversation.updatedAt,
+					content: "Hãy gửi lời chào đến người bạn này nào!",
+					type: "text",
+					readBy: [userId]
+				},
+			}))
+			.sort((a, b) => {
+				const aDate = a.lastMessage?.sentAt
+					? new Date(a.lastMessage.sentAt)
+					: 0;
+				const bDate = b.lastMessage?.sentAt
+					? new Date(b.lastMessage.sentAt)
+					: 0;
+				return bDate - aDate;
+			});
+        
+        return sortedConversations;
     } catch (error) {
         console.error("Error fetching conversations:", error);
         if (error instanceof Error) {
@@ -19,6 +47,9 @@ const getConversationById = async (userId, conversationId) => {
         const conversationData = await conversation.findOne({
             participants: { $in: [userId] },
             id: conversationId,
+        }).populate({
+            path: 'lastMessage',
+            options: { strictPopulate: false } // 💡 không lỗi nếu không có
         });
         return conversationData;
     } catch (error) {
@@ -30,6 +61,26 @@ const getConversationById = async (userId, conversationId) => {
         }
     }
 }
+
+const getConversationByCvsId = async(conversationId) => {
+    try {
+        const conversationData = await conversation.findOne({
+            id: conversationId,
+        }).populate({
+            path: 'lastMessage',
+            options: { strictPopulate: false } // 💡 không lỗi nếu không có
+        });
+        return conversationData;
+    } catch (error) {
+        console.error("Error fetching conversation:", error);
+        if (error instanceof Error) {
+            throw new Error("Không thể lấy cuộc trò chuyện. Vui lòng thử lại sau.");
+        } else {
+            throw new Error("Lỗi không xác định. Vui lòng thử lại sau.");
+        }
+    }
+}
+
 const createConversation = async (data) => {
     try {
         const newConversation = new conversation(data);
@@ -73,9 +124,10 @@ const deleteConversation = async (req, res) => {
 }
 
 module.exports = {
-    getAllConversations,
-    getConversationById,
-    createConversation,
-    updateConversation,
-    deleteConversation,
-}
+	getAllConversations,
+	getConversationById,
+	createConversation,
+	updateConversation,
+	deleteConversation,
+	getConversationByCvsId,
+};

@@ -4,15 +4,20 @@ const { generateIdSnowflake } = require("../utils/id-generators");
 
 // Định nghĩa schema cho Conversation
 const conversationSchema = new Schema({
-    id: { type: String, default: generateIdSnowflake, unique: true },
-    isGroup: { type: Boolean, default: false },
-    name: { type: String, default: '' },
-    avatar: { type: String, default: '' },
-    participants: { type: Array, default: [] },
-    adminIds: { type: Array, default: [] }, 
-    settings: { type: Object, default: {} },
-    createdAt: { type: Date, default: Date.now },
-    updatedAt: { type: Date, default: Date.now }
+	id: { type: String, default: generateIdSnowflake, unique: true },
+	isGroup: { type: Boolean, default: false },
+	name: { type: String, default: "" },
+	avatar: { type: String, default: "" },
+	participants: { type: Array, default: [] },
+	adminIds: { type: Array, default: [] },
+	settings: { type: Object, default: {} },
+	lastMessage: {
+		type: mongoose.Schema.Types.ObjectId,
+		ref: "messageModel", // 💡 ref giúp populate
+		default: null,
+	},
+	createdAt: { type: Date, default: Date.now },
+	updatedAt: { type: Date, default: Date.now },
 });
 
 // Middleware: tự động gán 'id' từ '_id' của MongoDB khi lưu
