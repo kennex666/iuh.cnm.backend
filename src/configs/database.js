@@ -5,7 +5,9 @@ config();
 const connectDB = async () => {
     try {
         await mongoose.connect(
-            "mongodb://localhost:27017/chat_web_app",
+            process.env.DB_HOST, {
+            dbName: process.env.DB_NAME
+        }
         );
         console.log("MongoDB Connected...");
     } catch (err) {
@@ -13,5 +15,5 @@ const connectDB = async () => {
         process.exit(1);
     }
 };
-module.exports= connectDB;
+module.exports = connectDB;
 

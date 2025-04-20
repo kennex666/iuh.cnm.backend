@@ -1,25 +1,49 @@
 const express = require("express");
-const { getAllFriendRequestsController, getFriendRequestByIdController, createFriendRequestController, updateFriendRequestAcceptController, updateFriendRequestDeclineController, deleteFriendRequestController, getAllPendingFriendRequestsController, getAllAcceptedFriendRequestsController, getAllDeclinedFriendRequestsController } = require("../controllers/friendRequest-controller");
 
+const { authMiddleware } = require("../middlewares/auth");
 const friendRequestRoute = express.Router();
+const {
+	getAllFriendRequestsController,
+	getFriendRequestByIdController,
+	createFriendRequestController,
+	updateFriendRequestDeclineController,
+	updateFriendRequestAcceptController,
+	deleteFriendRequestController,
+	getAllPendingFriendRequestsByReceiverIdController,
+	getAllPendingFriendRequestsBySenderIdController,
+	getAllFriendRequestsAcceptedController,
+	getFriendByNameOrPhoneController,
+} = require("../controllers/friendrequest-controller");
 
-//get all friend requests
+friendRequestRoute.use(authMiddleware);
+// Lấy tất cả yêu cầu kết bạn
 friendRequestRoute.get("/", getAllFriendRequestsController);
-//get friend request by id
+// Lấy tất cả yêu cầu kết bạn đã chấp nhận
+friendRequestRoute.get(
+	"/accepted/userId",
+	getAllFriendRequestsAcceptedController
+);
+// Lấy yêu cầu kết bạn theo ID
 friendRequestRoute.get("/:id", getFriendRequestByIdController);
-//save friend request
+// Tạo yêu cầu kết bạn mới
 friendRequestRoute.post("/", createFriendRequestController);
-//update friend request
-friendRequestRoute.put("/accept/:id", updateFriendRequestAcceptController);
-//update friend request
+// Cập nhật yêu cầu kết bạn thành từ chối
 friendRequestRoute.put("/decline/:id", updateFriendRequestDeclineController);
-//delete friend request
+// Cập nhật yêu cầu kết bạn thành chấp nhận
+friendRequestRoute.put("/accept/:id", updateFriendRequestAcceptController);
+// Xóa yêu cầu kết bạn
 friendRequestRoute.delete("/:id", deleteFriendRequestController);
-//get friend request status is pending
-friendRequestRoute.get("/pending/:id", getAllPendingFriendRequestsController);
-//get friend request status is accept
-friendRequestRoute.get("/accepted/:id", getAllAcceptedFriendRequestsController);
-//get friend request status is decline
-friendRequestRoute.get("/decline/:id", getAllDeclinedFriendRequestsController);
+// lời mời kết bạn gửi đến tôi mà đang PENDING
+friendRequestRoute.get(
+	"/pending/receiver",
+	getAllPendingFriendRequestsByReceiverIdController
+);
+// lời mời kết bạn tôi gửi mà đang PENDING
+friendRequestRoute.get(
+	"/pending/sender",
+	getAllPendingFriendRequestsBySenderIdController
+);
+// Tìm kiếm bạn bè theo tên hoặc số điện thoại
+friendRequestRoute.get("/search/:query", getFriendByNameOrPhoneController);
 
 module.exports = friendRequestRoute;
