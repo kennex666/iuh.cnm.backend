@@ -1,93 +1,107 @@
-const {getAllMessages, getMessageById, createMessage, updateMessage, deleteMessage} = require("../services/message-service");
-
+const {getAllMessages, getMessageById, createMessage, updateMessage, deleteMessage, getMessageByConversationId,getMessageBySenderId} = require("../services/message-service");
+const {handleError,responseFormat,AppError } = require("../utils/response-format");
 const getAllMessagesController = async (req, res) => {
     try {
-        const messages = await getAllMessages(req, res);
-        res.status(200).json({
-            status:"200",
-            message:"Get all messages successfully",
-            data: messages,
-        });
+        const userId = req.user.id;
+        const messages = await getAllMessages(userId);
+        if (!messages) {
+            throw new AppError("Messages not found", 404);
+        }
+        responseFormat(res, messages, "Get all messages successfully", true, 200);
     } catch (error) {
-        res.status(200).json({ 
-            status:"200",
-            message:error.message,
-            data: null,
-         });
+        handleError(error, res, "Failed to retrieve messages");
     }
 }
 
 const getMessageByIdController = async (req, res) => {
     try {
-        const message = await getMessageById(req, res);
-        res.status(200).json({
-            status:"200",
-            message:"Get message successfully",
-            data: message,
-        });
+        const userId = req.user.id;
+        const messageId = req.params.id;
+        const message = await getMessageById(userId, messageId);
+        if (!message) {
+            throw new AppError("Message not found", 404);
+        }
+        responseFormat(res, message, "Get message successfully", true, 200);
     } catch (error) {
-        res.status(500).json({ 
-            status:"200",
-            message:error.message,
-            data: null,
-         });
+        handleError(error, res, "Failed to retrieve message");
     }
 }
 const createMessageController = async (req, res) => {
     try {
-        const { id,conversationId,senderId,content,type,repliedTold,readBy } = req.body;
+        const userId = req.user.id; // Lấy userId từ token
+        const { id,conversationId,content,type,repliedTold,readBy } = req.body;
         const newMessage = await createMessage({
             id,
             conversationId,
-            senderId,
+            senderId: userId,
             content,
             type,
             repliedTold,
             readBy,
         });
-        res.status(200).json({
-            status:"200",
-            message:"Create message successfully",
-            data: newMessage,
-        });
+        if (!newMessage) {
+            throw new AppError("Failed to create message", 400);
+        }
+        responseFormat(res, newMessage, "Create message successfully", true, 200);
     } catch (error) {
-        res.status(200).json({
-            status:"200",
-            message:error.message,
-            data: null,
-        });
+        handleError(error, res, "Create message failed");
     }
 }
 const updateMessageController = async (req, res) => {
     try {
+        const userId = req.user.id;
+        // const message = await getMessageById(userId, req.params.id);
+        // if(!message || message.senderId !== userId) {
+        //     throw new AppError("Message not found", 404);
+        // }
         const updatedMessage = await updateMessage(req, res);
-        res.status(200).json({
-            status:"200",
-            message:"Update message successfully",
-            data: updatedMessage,
-        });
+        if (!updatedMessage) {
+            throw new AppError("Message not found", 404);
+        }
+        responseFormat(res, updatedMessage, "Update message successfully", true, 200);
     } catch (error) {
-        res.status(200).json({ 
-            status:"200",
-            message:error.message,
-            data: null,
-         });
+        handleError(error, res, "Update message failed");
     }
 }
 const deleteMessageController = async (req, res) => {
     try {
+        // const userId = req.user.id; 
+        // const message = await getMessageById(userId, req.params.id);
+        // if(!message || message.senderId !== userId) {
+        //     throw new AppError("Message not found", 404);
+        // }
         const deletedMessage = await deleteMessage(req, res);
-        res.status(200).json({
-            status:"200",
-            message:"Delete message successfully",
-            data: deletedMessage,
-        });
+        if (!deletedMessage) {
+            throw new AppError("Message not found", 404);
+        }
+        responseFormat(res, deletedMessage, "Delete message successfully", true, 200);
     } catch (error) {
-        res.status(200).json({
-            status:"200",
-            message:error.message,
-            data: null,
-        });
+        handleError(error, res, "Delete message failed");
+    }
+}
+
+const getMessageByConversationIdController = async (req, res) => {
+    try {
+        const messages = await getMessageByConversationId(req, res);
+        if (!messages) {
+            throw new AppError("Messages not found", 404);
+        }
+        responseFormat(res, messages, "Get messages by conversation ID successfully", true, 200);
+    } catch (error) {
+        handleError(error, res, "Failed to retrieve messages by conversation ID");
+    }
+}
+
+const getMessageBySenderIdController = async (req, res) => {
+    try {
+        const senderId = req.params.id;
+        const message = await getMessageBySenderId(senderId);
+        if (!message) {
+            throw new AppError("Message not found", 404);
+        }
+        responseFormat(res, message, "Get message successfully", true, 200);
+    } catch (error) {
+        handleError(error, res, "Failed to retrieve message");
     }
 }
 
@@ -96,5 +110,7 @@ module.exports = {
     getMessageByIdController,
     createMessageController,
     updateMessageController,
-    deleteMessageController
+    deleteMessageController,
+    getMessageByConversationIdController,
+    getMessageBySenderIdController,
 };

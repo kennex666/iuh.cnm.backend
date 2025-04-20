@@ -1,6 +1,16 @@
 const { PutObjectCommand, ObjectCannedACL, DeleteObjectCommand } = require("@aws-sdk/client-s3");
 const { v4: uuidv4 } = require("uuid");
-const { s3, folderImage, folderVideo, videoMimeTypes, bucketName, bucketRegion } = require("../configs/aws");
+const { s3,
+    folderImage,
+    folderVideo,
+    videoMimeTypes,
+    bucketName,
+    bucketRegion,
+    folderEmoji,
+    folderFile,
+    imageMimeTypes,
+    emojiMimeTypes,
+    fileMimeTypes, } = require("../configs/aws");
 
 
 class S3FileManager {
@@ -14,6 +24,15 @@ class S3FileManager {
         const extension = originalFileName.substring(lastDotIndex + 1);
         return `${baseName}-${uuidv4()}.${extension}`;
     };
+
+    getFolderName(contentType) {
+        if (videoMimeTypes.includes(contentType)) return folderVideo;
+        if (emojiMimeTypes.includes(contentType)) return folderEmoji;
+        if (imageMimeTypes.includes(contentType)) return folderImage;
+        if (fileMimeTypes.includes(contentType)) return folderFile;
+        console.warn("Unknown content type. Defaulting to image folder.");
+        return folderImage;
+    }
 
     //Push object
     /**
@@ -29,7 +48,21 @@ class S3FileManager {
         }
 
         try {
-            const folderName = videoMimeTypes.includes(file.contentType) ? folderVideo : folderImage;
+            // const folderName = videoMimeTypes.includes(file.contentType) ? folderVideo : folderImage;
+            // let folderName;
+            // if (videoMimeTypes.includes(file.contentType)) {
+            //     folderName = folderVideo;
+            // } else if (emojiMimeTypes.includes(file.contentType)) {
+            //     folderName = folderEmoji;
+            // } else if (imageMimeTypes.includes(file.contentType)) {
+            //     folderName = folderImage;
+            // } else if (fileMimeTypes.includes(file.contentType)) {
+            //     folderName = folderFile;
+            // } else {
+            //     console.warn("Unknown content type. Defaulting to image folder.");
+            //     folderName = folderImage;
+            // }
+            const folderName = this.getFolderName(file.contentType);
             const key = `${folderName}/${this.generateUniqueFileName(file.fileName)}`;
 
             const params = {

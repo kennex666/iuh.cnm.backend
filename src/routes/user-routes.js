@@ -3,7 +3,7 @@ const express = require("express");
 const { body } = require("express-validator");
 const { validateBody } = require("../middlewares/validation");
 const UserController = require("../controllers/user-controller");
-const authMiddleware = require("../middlewares/auth");
+const {authMiddleware}= require("../middlewares/auth");
 const multer = require("multer");
 const router = express.Router();
 
@@ -28,6 +28,7 @@ const validateUpdateUser = [
 // User routes
 router.get("/search", UserController.searchUsers);
 router.get("/:id", UserController.getUserById);
+router.get("/search/:q", UserController.searchUsersByPhone);
 router.put(
     "/update",
     authMiddleware,

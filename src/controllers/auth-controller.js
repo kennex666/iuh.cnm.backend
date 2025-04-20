@@ -6,6 +6,7 @@ const { verify2FACode } = require("../utils/2fa-generator");
 const { io, getIO } = require("../routes/socket-routes");
 const { getTokensByUserId } = require("../services/jwt-token-service");
 const UserModel = require("../models/user-model");
+const { resendOtpHelper } = require("../utils/otp-helper");
 
 class AuthController {
 	async register(req, res) {
@@ -49,6 +50,7 @@ class AuthController {
 			}
 			// Check if the user isnt verified
 			if (result?.user?.isVerified === false) {
+				resendOtpHelper(phone, "Ban dang thuc hien thao tac tao tai khoan tai iMessify.");
 				return responseFormat(
 					res,
 					null,

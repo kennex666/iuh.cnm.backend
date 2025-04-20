@@ -2,9 +2,9 @@ const friendRequestModel = require('../models/friendrequest-model');
 const typeRequest = require('../models/type-request');
 
 // Lấy tất cả yêu cầu kết bạn
-const getAllFriendRequests = async (req, res) => {
+const getAllFriendRequests = async (userId) => {
     try {
-        const friendRequests = await friendRequestModel.find({});
+        const friendRequests = await friendRequestModel.find({senderId: userId});
         return friendRequests;
     } catch (error) {
         console.error("Error fetching friend requests:", error);
@@ -17,10 +17,9 @@ const getAllFriendRequests = async (req, res) => {
 }
 
 // Lấy yêu cầu kết bạn theo ID
-const getFriendRequestById = async (req, res) => {
+const getFriendRequestById = async (userId,friendRequestId ) => {
     try {
-        const friendRequestId = req.params.id;
-        const friendRequestData = await friendRequestModel.findById(friendRequestId);
+        const friendRequestData = await friendRequestModel.findOne({senderId: userId, id: friendRequestId});
         return friendRequestData;
     } catch (error) {
         console.error("Error fetching friend request:", error);
@@ -95,11 +94,26 @@ const deleteFriendRequest = async (req, res) => {
         }
     }
 }
-// Lấy tất cả yêu cầu kết bạn đang chờ xử lý(PENDING) và  requestId là id của người gửi yêu cầu kết bạn
-const getAllPendingFriendRequests = async (req, res) => {
+// lời mời kết bạn gửi đến tôi mà đang PENDING
+const getAllPendingFriendRequestsByReceiverId = async (req, res) => {
     try {
-        const friendRequestId = req.params.id;
-        const friendRequests = await friendRequestModel.find({status: typeRequest.PENDING, receiverId: friendRequestId});
+        const userId = req.user.id;
+        const friendRequests = await friendRequestModel.find({status: typeRequest.PENDING, receiverId: userId});
+        return friendRequests;
+    } catch (error) {
+        console.error("Error fetching pending friend requests:", error);
+        if (error instanceof Error) {
+            throw new Error("Không thể lấy danh sách yêu cầu kết bạn đang chờ xử lý. Vui lòng thử lại sau.");
+        } else {
+            throw new Error("Lỗi không xác định. Vui lòng thử lại sau.");
+        }
+    }
+}
+// lời mời kết bạn tôi gửi mà đang PENDING
+const getAllPendingFriendRequestsBySenderId = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const friendRequests = await friendRequestModel.find({status: typeRequest.PENDING, senderId: userId});
         return friendRequests;
     } catch (error) {
         console.error("Error fetching pending friend requests:", error);
@@ -111,21 +125,21 @@ const getAllPendingFriendRequests = async (req, res) => {
     }
 }
 
-// Lấy tất cả yêu cầu kết bạn đã chấp nhận(ACCEPT)  
-const getAllAcceptedFriendRequests = async (req, res) => {
-    try {
-        const friendRequestId = req.params.id;
-        const friendRequests = await friendRequestModel.find({status: typeRequest.ACCEPTED, receiverId: friendRequestId});
-        return friendRequests;
-    } catch (error) {
-        console.error("Error fetching accepted friend requests:", error);
-        if (error instanceof Error) {
-            throw new Error("Không thể lấy danh sách yêu cầu kết bạn đã chấp nhận. Vui lòng thử lại sau.");
-        } else {
-            throw new Error("Lỗi không xác định. Vui lòng thử lại sau.");
-        }
-    }
-}
+// // Lấy tất cả yêu cầu kết bạn đã chấp nhận(ACCEPT)  
+// const getAllAcceptedFriendRequests = async (req, res) => {
+//     try {
+//         const friendRequestId = req.params.id;
+//         const friendRequests = await friendRequestModel.find({status: typeRequest.ACCEPTED, receiverId: friendRequestId});
+//         return friendRequests;
+//     } catch (error) {
+//         console.error("Error fetching accepted friend requests:", error);
+//         if (error instanceof Error) {
+//             throw new Error("Không thể lấy danh sách yêu cầu kết bạn đã chấp nhận. Vui lòng thử lại sau.");
+//         } else {
+//             throw new Error("Lỗi không xác định. Vui lòng thử lại sau.");
+//         }
+//     }
+// }
 // Lấy tất cả yêu cầu kết bạn đã từ chối(DECLINE)
 const getAllDeclinedFriendRequests = async (req, res) => {
     try {
@@ -141,6 +155,56 @@ const getAllDeclinedFriendRequests = async (req, res) => {
     }
 }
 
+// lay yeu cau ket ban da chap nhan
+const getAllFriendRequestAccepted = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const friendRequests = await friendRequestModel.find({status: typeRequest.ACCEPTED,
+            $or: [
+                { receiverId: userId },
+                { senderId: userId }
+              ]
+        });
+        return friendRequests;
+    } catch (error) {
+        console.error("Error fetching pending friend requests:", error);
+        if (error instanceof Error) {
+            throw new Error("Không thể lấy danh sách yêu cầu kết bạn đang chờ xử lý. Vui lòng thử lại sau.");
+        } else {
+            throw new Error("Lỗi không xác định. Vui lòng thử lại sau.");
+        }
+    }
+}
+
+// tìm kiếm bạn bè theo tên và số điện thoại
+const getFriendByNameOrPhone = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const query = req.params.query;
+        const friendRequests = await friendRequestModel.find({
+            status: typeRequest.ACCEPTED,
+            $or: [
+                { receiverId: userId },
+                { senderId: userId }
+              ],
+            $or: [
+                { name: { $regex: query, $options: 'i' } },
+                { phone: { $regex: query, $options: 'i' } }
+            ]
+        });
+        return friendRequests;
+    } catch (error) {
+        console.error("Error fetching friend requests:", error);
+        if (error instanceof Error) {
+            throw new Error("Không thể lấy danh sách yêu cầu kết bạn. Vui lòng thử lại sau.");
+        } else {
+            throw new Error("Lỗi không xác định. Vui lòng thử lại sau.");
+        }
+    }
+}
+
+
+
 module.exports = {
     getAllFriendRequests,
     getFriendRequestById,
@@ -148,7 +212,9 @@ module.exports = {
     updateFriendRequestDecline,
     updateFriendRequestAccept,
     deleteFriendRequest,
-    getAllPendingFriendRequests,
-    getAllAcceptedFriendRequests,
+    getAllPendingFriendRequestsByReceiverId,
+    getAllPendingFriendRequestsBySenderId,
     getAllDeclinedFriendRequests,
+    getAllFriendRequestAccepted,
+    getFriendByNameOrPhone
 };

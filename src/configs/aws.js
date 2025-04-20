@@ -9,6 +9,8 @@ const accessKeyIam = process.env.ACCESS_KEY_IAM;
 const secretAccessKeyIam = process.env.SECRET_ACCESS_KEY_IAM;
 const folderImage = "chatApp-images";
 const folderVideo = "chatApp-videos";
+const folderEmoji = "chatApp-emojis";
+const folderFile = "chatApp-files";
 
 const videoMimeTypes = [
     'video/mp4',
@@ -21,6 +23,29 @@ const videoMimeTypes = [
     'video/3gpp',
     'video/3gpp2'
 ];
+
+const emojiMimeTypes = [
+    'image/png',
+    'image/svg+xml',
+    'image/gif'
+];
+
+const imageMimeTypes = [
+    'image/jpeg',
+    'image/png',
+    'image/webp',
+    'image/jpg'
+];
+
+const fileMimeTypes = [
+    'application/pdf',
+    'application/zip',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/msword',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+];
+
 
 
 let s3 = null;
@@ -44,5 +69,10 @@ module.exports = {
     folderVideo,
     videoMimeTypes,
     bucketName,
-    bucketRegion
+    bucketRegion,
+    folderEmoji,
+    folderFile,
+    imageMimeTypes,
+    emojiMimeTypes,
+    fileMimeTypes,
 }
