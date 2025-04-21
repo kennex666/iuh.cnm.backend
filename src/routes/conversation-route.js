@@ -26,7 +26,7 @@ conversationRoute.put("/remove-participants/:id", removeParticipantsController);
 conversationRoute.put("/transfer-admin/:id", transferAdminController);
 //grant mod role
 conversationRoute.put("/grant-mod-role/:id", grantModController);
-//update allow messaging
+//update allow messaging (Nhắn vào là đổi trạng thái từ fasle thành true và ngược lại)
 conversationRoute.put("/update-allow-messaging/:id", updateAllowMessagingCotroller);
 
 

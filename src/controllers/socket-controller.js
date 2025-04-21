@@ -7,6 +7,12 @@ const { createMessage } = require('../services/message-service');
 const { createAttachment } = require("../services/attachment-service");
 const typeMessage = require('../models/type-message');
 
+const {getAllConversationsController, getConversationByIdController, 
+	createConversationController, updateConversationController, 
+	deleteConversationController,addParticipantsController, removeParticipantsController, 
+	transferAdminController, grantModController,
+	updateAllowMessagingCotroller} = require("../controllers/conversation-controller");
+
 
 class SocketController {
 	static async handleSendMessage(io, socket, data) {
@@ -181,6 +187,176 @@ class SocketController {
 			});
 		}
 	}
+	static async handleAddParticipants(io, socket, data) {
+		try {
+			const { conversationId, participantIds } = data;
+	
+			if (!conversationId || !participantIds || !Array.isArray(participantIds)) {
+				return socket.emit("conversation:error", {
+					message: "Invalid data for adding participants",
+				});
+			}
+	
+			const updatedConversation = await addParticipantsController({
+				params: { id: conversationId },
+				body: { participantIds },
+				user: { id: socket.user.id },
+			});
+	
+			// Notify all participants in the conversation
+			const participants = updatedConversation.participantInfo.map((p) => p.id);
+			participants.forEach((participantId) => {
+				MemoryManager.getSocketList(participantId).forEach((socketId) => {
+					io.to(socketId).emit("conversation:participants_added", {
+						conversationId,
+						participants: participantIds,
+					});
+				});
+			});
+		} catch (error) {
+			console.error("Error adding participants:", error);
+			socket.emit("conversation:error", {
+				message: "Failed to add participants",
+			});
+		}
+	}
+
+	static async handleRemoveParticipants(io, socket, data) {
+		try {
+			const { conversationId, participantIds } = data;
+	
+			if (!conversationId || !participantIds || !Array.isArray(participantIds)) {
+				return socket.emit("conversation:error", {
+					message: "Invalid data for removing participants",
+				});
+			}
+	
+			const updatedConversation = await removeParticipantsController({
+				params: { id: conversationId },
+				body: { participantIds },
+				user: { id: socket.user.id },
+			});
+	
+			// Notify all remaining participants in the conversation
+			const participants = updatedConversation.participantInfo.map((p) => p.id);
+			participants.forEach((participantId) => {
+				MemoryManager.getSocketList(participantId).forEach((socketId) => {
+					io.to(socketId).emit("conversation:participants_removed", {
+						conversationId,
+						removedParticipants: participantIds,
+					});
+				});
+			});
+		} catch (error) {
+			console.error("Error removing participants:", error);
+			socket.emit("conversation:error", {
+				message: "Failed to remove participants",
+			});
+		}
+	}
+
+	static async handleTransferAdmin(io, socket, data) {
+		try {
+			const { conversationId, toUserId } = data;
+	
+			if (!conversationId || !toUserId) {
+				return socket.emit("conversation:error", {
+					message: "Invalid data for transferring admin role",
+				});
+			}
+	
+			const updatedConversation = await transferAdminController({
+				params: { id: conversationId },
+				body: { toUserId },
+				user: { id: socket.user.id },
+			});
+	
+			// Notify all participants in the conversation
+			const participants = updatedConversation.participantInfo.map((p) => p.id);
+			participants.forEach((participantId) => {
+				MemoryManager.getSocketList(participantId).forEach((socketId) => {
+					io.to(socketId).emit("conversation:admin_transferred", {
+						conversationId,
+						newAdminId: toUserId,
+					});
+				});
+			});
+		} catch (error) {
+			console.error("Error transferring admin role:", error);
+			socket.emit("conversation:error", {
+				message: "Failed to transfer admin role",
+			});
+		}
+	}
+
+	static async handleGrantMod(io, socket, data) {
+		try {
+			const { conversationId, toUserId } = data;
+	
+			if (!conversationId || !toUserId) {
+				return socket.emit("conversation:error", {
+					message: "Invalid data for granting mod role",
+				});
+			}
+	
+			const updatedConversation = await grantModController({
+				params: { id: conversationId },
+				body: { toUserId },
+				user: { id: socket.user.id },
+			});
+	
+			// Notify all participants in the conversation
+			const participants = updatedConversation.participantInfo.map((p) => p.id);
+			participants.forEach((participantId) => {
+				MemoryManager.getSocketList(participantId).forEach((socketId) => {
+					io.to(socketId).emit("conversation:mod_granted", {
+						conversationId,
+						newModId: toUserId,
+					});
+				});
+			});
+		} catch (error) {
+			console.error("Error granting mod role:", error);
+			socket.emit("conversation:error", {
+				message: "Failed to grant mod role",
+			});
+		}
+	}
+
+	static async handleUpdateAllowMessaging(io, socket, data) {
+		try {
+			const { conversationId } = data;
+	
+			if (!conversationId) {
+				return socket.emit("conversation:error", {
+					message: "Invalid data for updating allow messaging",
+				});
+			}
+	
+			const updatedConversation = await updateAllowMessagingCotroller({
+				params: { id: conversationId },
+				user: { id: socket.user.id },
+			});
+	
+			// Notify all participants in the conversation
+			const participants = updatedConversation.participantInfo.map((p) => p.id);
+			participants.forEach((participantId) => {
+				MemoryManager.getSocketList(participantId).forEach((socketId) => {
+					io.to(socketId).emit("conversation:allow_messaging_updated", {
+						conversationId,
+						isAllowMessaging: updatedConversation.settings.isAllowMessaging,
+					});
+				});
+			});
+		} catch (error) {
+			console.error("Error updating allow messaging:", error);
+			socket.emit("conversation:error", {
+				message: "Failed to update allow messaging",
+			});
+		}
+	}
+
+
 }
 
 module.exports = SocketController;
