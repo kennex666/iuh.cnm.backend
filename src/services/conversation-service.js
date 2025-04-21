@@ -1,10 +1,11 @@
 const conversation = require('../models/conversation-model');
+const { AppError } = require('../utils/response-format');
 
 const getAllConversations = async (userId) => {
     try {
 
         const conversations = await conversation
-			.find({ participants: { $in: [userId] } })
+			.find({ participantIds: { $in: [userId] } })
 			.populate({
 				path: "lastMessage",
 				options: { strictPopulate: false }, // 💡 không lỗi nếu không có
@@ -45,7 +46,7 @@ const getAllConversations = async (userId) => {
 const getConversationById = async (userId, conversationId) => {
     try {
         const conversationData = await conversation.findOne({
-            participants: { $in: [userId] },
+            participantIds: { $in: [userId] },
             id: conversationId,
         }).populate({
             path: 'lastMessage',
@@ -123,6 +124,120 @@ const deleteConversation = async (req, res) => {
     }
 }
 
+// Thêm 1 hoặc nhiều thành viên vào cuộc trò chuyện và thêm vào cả participantInfo
+const addParticipants = async (conversationId, participantIds, participantInfo) => {
+    try {
+        const updatedConversation = await conversation.findByIdAndUpdate(
+            conversationId,
+            {
+                $addToSet: { participantIds: { $each: participantIds }, participantInfo: { $each: participantInfo } },
+            },
+            { new: true }
+        );
+        return updatedConversation;
+    } catch (error) {
+        console.error("Error adding participants:", error);
+        if (error instanceof Error) {
+            throw new Error("Không thể thêm thành viên vào cuộc trò chuyện. Vui lòng thử lại sau.");
+        } else {
+            throw new Error("Lỗi không xác định. Vui lòng thử lại sau.");
+        }
+    }
+}
+
+// xóa 1 hoặc nhiều thành viên khỏi cuộc trò chuyện và xóa khỏi cả participantInfo
+const removeParticipants = async (conversationId, participantIds) => {
+    try {
+        const updatedConversation = await conversation.findByIdAndUpdate(
+            conversationId,
+            {
+                $pull: { participantIds: { $in: participantIds }, participantInfo: { id: { $in: participantIds } } },
+            },
+            { new: true }
+        );
+        return updatedConversation;
+    } catch (error) {
+        console.error("Error removing participants:", error);
+        if (error instanceof Error) {
+            throw new Error("Không thể xóa thành viên khỏi cuộc trò chuyện. Vui lòng thử lại sau.");
+        } else {
+            throw new Error("Lỗi không xác định. Vui lòng thử lại sau.");
+        }
+    }
+}
+
+
+const transferAdminRole = async (conversationId, fromUserId, toUserId) => {
+    const conversations = await conversation.findOne({ id: conversationId });
+    if (!conversations) throw new AppError('Conversation not found', 404);
+
+    const currentUser = conversations.participantInfo.find(p => p.id === fromUserId);
+    if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'mod')) {
+        throw new AppError('Permission denied. Only admin or mod can transfer role.', 403);
+    }
+
+    const targetUser = conversations.participantInfo.find(p => p.id === toUserId);
+    if (!targetUser) {
+        throw new AppError('Target user not found in conversation', 404);
+    }
+
+    if(currentUser.role === 'admin') {
+            // Cập nhật role
+        conversations.participantInfo = conversations.participantInfo.map(p => {
+            if (p.id === toUserId) return { ...p, role: 'admin' };
+            return p;
+        });
+        conversations.participantInfo = conversations.participantInfo.map(p => {
+            if (p.id === fromUserId) return { ...p, role: 'member' };
+            return p;
+         });
+    }
+
+    if(currentUser.role === 'mod') {
+        // Cập nhật role
+    conversations.participantInfo = conversations.participantInfo.map(p => {
+        if (p.id === toUserId) return { ...p, role: 'mod' };
+        return p;
+    });
+    conversations.participantInfo = conversations.participantInfo.map(p => {
+        if (p.id === fromUserId) return { ...p, role: 'member' };
+        return p;
+    });
+    }
+    await conversations.save();
+    return conversations;
+};
+
+// admin cấp quyền cho mod
+const grantModRole = async (conversationId, fromUserId, toUserId) => {
+    const conversations = await conversation.findOne({ id: conversationId });
+    if (!conversations) throw new AppError('Conversation not found', 404);
+
+    const currentUser = conversations.participantInfo.find(p => p.id === fromUserId);
+    if (!currentUser || currentUser.role !== 'admin') {
+        throw new AppError('Permission denied. Only admin can grant mod role.', 403);
+    }
+
+    const targetUser = conversations.participantInfo.find(p => p.id === toUserId);
+    if (!targetUser) {
+        throw new AppError('Target user not found in conversation', 404);
+    }
+
+    // Cập nhật role
+    conversations.participantInfo = conversations.participantInfo.map(p => {
+        if (p.id === toUserId) return { ...p, role: 'mod' };
+        return p;
+    });
+
+    await conversations.save();
+    return conversations;
+};
+
+
+
+
+
+
 module.exports = {
 	getAllConversations,
 	getConversationById,
@@ -130,4 +245,8 @@ module.exports = {
 	updateConversation,
 	deleteConversation,
 	getConversationByCvsId,
+    addParticipants,
+    removeParticipants,
+    transferAdminRole,
+    grantModRole
 };
