@@ -222,6 +222,18 @@ const socketRoutes = (io) => {
 		socket.on("conversation:update_allow_messaging", async (data) => {
 			await SocketController.handleUpdateAllowMessaging(io, socket, data);
 		});
+
+		socket.on("vote:create", async (data) => {
+			await SocketController.handleCreateVote(io, socket, data);
+		});
+	
+		socket.on("vote:submit", async (data) => {
+			await SocketController.handleSubmitVote(io, socket, data);
+		});
+	
+		socket.on("vote:get", async (data) => {
+			await SocketController.handleGetVote(io, socket, data);
+		});
 	});
 };
 
