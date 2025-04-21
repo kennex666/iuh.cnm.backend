@@ -29,19 +29,20 @@ const getReactionByIdController = async (req, res) => {
 
 const createReactionController = async (req, res) => {
     try {
-        const { id, messageId, userId} = req.body;
+        const {id,messageId, emoji} = req.body;
+        const userId = req.user.id; // Assuming user ID is stored in req.user
 
-        if (!messageId || !userId || !req.file) {
+        if (!messageId || !userId || !emoji) {
             throw new AppError("Missing messageId, userId or emoji", 400);
         }
 
-        const file = {
-            buffer: req.file.buffer,
-            fileName: req.file.originalname,
-            contentType: req.file.mimetype
-        };
+        // const file = {
+        //     buffer: req.file.buffer,
+        //     fileName: req.file.originalname,
+        //     contentType: req.file.mimetype
+        // };
 
-        const reaction = await createReaction({ id, messageId, userId, file });
+        const reaction = await createReaction({ id,messageId, userId, emoji });
 
         if (!reaction) {
             throw new AppError("Reaction not created", 400);
