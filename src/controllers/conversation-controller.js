@@ -1,6 +1,8 @@
 const { error } = require('console');
-const {getAllConversations, getConversationById, createConversation, updateConversation, deleteConversation} = require('../services/conversation-service');
+const {getAllConversations, getConversationById, createConversation, updateConversation, deleteConversation, addParticipants, removeParticipants, transferAdminRole,grantModRole} = require('../services/conversation-service');
 const {AppError,handleError,responseFormat } = require("../utils/response-format");
+const userService = require('../services/user-service');
+const { updateSearchIndex } = require('../models/conversation-model');
 const getAllConversationsController = async (req, res) => {
     try {
         const userId = req.user.id;
@@ -29,26 +31,37 @@ const getConversationByIdController = async (req, res) => {
 const createConversationController = async (req, res) => {
     try {
         const userId = req.user.id; // Lấy userId từ token
+        
         const {
             isGroup,
             name,
-            avatar,
-            participants = [],
-            adminIds = [],
-            settings,
+            avatarUrl,
+            avatarGroup,
+            participantIds = [],
+            participantInfo = [],
+            url,
+            pinMessages = [],
+            settings = {}
         } = req.body;
-
         // Đảm bảo userId của người tạo được thêm vào participants và adminIds
-        if (!participants.includes(userId)) participants.push(userId);
-        if (!adminIds.includes(userId)) adminIds.push(userId);
+        if (!participantIds.includes(userId)) participantIds.push(userId);
+        if (!participantInfo.some(info => info.id === userId)) {
+            const user = await userService.getUserById(userId);
+            participantInfo.push({ id: userId, name: user.name ,avatar: avatarUrl });
+        }
+        // if (!adminIds.includes(userId)) adminIds.push(userId);
 
         const newConversation = await createConversation({
             isGroup,
             name,
-            avatar,
-            participants,
-            adminIds,
-            settings,
+            avatarUrl,
+            avatarGroup,
+            type: isGroup ? "group" : "1vs1",
+            participantIds,
+            participantInfo,
+            url,
+            pinMessages,
+            settings
         });
 
         if (!newConversation) {
@@ -110,10 +123,103 @@ const deleteConversationController = async (req, res) => {
     }
 };
 
+const addParticipantsController = async (req, res) => {
+    try {
+        const userId = req.user.id; // Lấy userId từ token
+        const conversationId = req.params.id;
+        const { participantIds } = req.body;
+
+        // Fetch participant information and avoid duplicates
+        const fetchedParticipants = new Set(); // To track unique participant IDs
+        const participantInfo = await Promise.all(participantIds.map(async (id) => {
+            try {
+                if (fetchedParticipants.has(id)) {
+                    return null; // Skip duplicate IDs
+                }
+                const user = await userService.getUserById(id);
+                fetchedParticipants.add(id); // Add ID to the set
+                return { id: user.id, name: user.name, avatar: user.avatarUrl, nickname: user.name, role: 'member' };
+            } catch (error) {
+                console.error(`Failed to fetch user with id: ${id}`, error);
+                return null; // Handle errors gracefully
+            }
+        })).then(results => results.filter(info => info !== null)); // Remove null values
+
+        const updatedConversation = await addParticipants(conversationId, participantIds, participantInfo);
+
+        if (!updatedConversation) {
+            throw new AppError("Failed to add participants", 400);
+        }
+
+        responseFormat(res, updatedConversation, "Add participants successful", true, 200);
+    } catch (error) {
+        handleError(error, res, "Add participants failed");
+    }
+};
+
+const removeParticipantsController = async (req, res) => {
+    try {
+        const userId = req.user.id; // Lấy userId từ token
+        const conversationId = req.params.id;
+        const { participantIds } = req.body;
+
+
+        const updatedConversation = await removeParticipants(conversationId, participantIds);
+
+        if (!updatedConversation) {
+            throw new AppError("Failed to remove participants", 400);
+        }
+
+        responseFormat(res, updatedConversation, "Remove participants successful", true, 200);
+    } catch (error) {
+        handleError(error, res, "Remove participants failed");
+    }
+};
+
+const transferAdminController = async (req, res) => {
+    try {
+        const fromUserId = req.user.id;
+        const conversationId = req.params.id;
+        const { toUserId } = req.body;
+
+        if (!conversationId || !toUserId) {
+            throw new Error('Missing conversationId or toUserId');
+        }
+
+        const updatedConversation = await transferAdminRole(conversationId, fromUserId, toUserId);
+
+        responseFormat(res, updatedConversation, 'Transferred admin role successfully', true, 200);
+    } catch (error) {
+        handleError(error, res, 'Transfer admin failed');
+    }
+};
+// Admin cấp quyền mod cho người dùng
+const grantModController = async (req, res) => {
+    try {
+        const fromUserId = req.user.id; // Lấy userId từ token
+        const conversationId = req.params.id;
+        const { toUserId } = req.body;
+
+        if (!conversationId || !toUserId) {
+            throw new AppError('Missing conversationId or toUserId', 400);
+        }
+
+        const updatedConversation = await grantModRole(conversationId, fromUserId, toUserId);
+
+        responseFormat(res, updatedConversation, 'Granted mod role successfully', true, 200);
+    } catch (error) {
+        handleError(error, res, 'Grant mod failed');
+    }
+};
+
 module.exports = {
     getAllConversationsController,
     getConversationByIdController,
     createConversationController,
     updateConversationController,
-    deleteConversationController
+    deleteConversationController,
+    addParticipantsController,
+    removeParticipantsController,
+    transferAdminController,
+    grantModController
 };
