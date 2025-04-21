@@ -233,8 +233,21 @@ const grantModRole = async (conversationId, fromUserId, toUserId) => {
     return conversations;
 };
 
+// Đổi trạng thái isAllowMessaging của cuộc trò chuyện(true đuợc nhắn tin, false không được nhắn tin)
+const updateAllowMessaging = async (conversationId, userId) => {
+    const conversations = await conversation.findOne({ id: conversationId });
+    if (!conversations) throw new AppError('Conversation not found', 404);
 
+    const currentUser = conversations.participantInfo.find(p => p.id === userId);
+    if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'mod')) {
+        throw new AppError('Permission denied. Only admin or mod can update messaging status.', 403);
+    }
 
+    // Cập nhật trạng thái isAllowMessaging
+    conversations.settings.isAllowMessaging = !conversations.settings.isAllowMessaging;
+    await conversations.save();
+    return conversations;
+}
 
 
 
@@ -248,5 +261,6 @@ module.exports = {
     addParticipants,
     removeParticipants,
     transferAdminRole,
-    grantModRole
+    grantModRole,
+    updateAllowMessaging
 };

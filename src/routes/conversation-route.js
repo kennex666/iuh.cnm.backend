@@ -1,5 +1,8 @@
 const express = require("express");
-const {getAllConversationsController, getConversationByIdController, createConversationController, updateConversationController, deleteConversationController,addParticipantsController, removeParticipantsController, transferAdminController, grantModController} = require("../controllers/conversation-controller");
+const {getAllConversationsController, getConversationByIdController, 
+    createConversationController, updateConversationController, 
+    deleteConversationController,addParticipantsController, removeParticipantsController, 
+    transferAdminController, grantModController,updateAllowMessagingCotroller} = require("../controllers/conversation-controller");
 const {authMiddleware} = require("../middlewares/auth");
 const conversationRoute = express.Router();
 
@@ -23,6 +26,8 @@ conversationRoute.put("/remove-participants/:id", removeParticipantsController);
 conversationRoute.put("/transfer-admin/:id", transferAdminController);
 //grant mod role
 conversationRoute.put("/grant-mod-role/:id", grantModController);
+//update allow messaging
+conversationRoute.put("/update-allow-messaging/:id", updateAllowMessagingCotroller);
 
 
 module.exports = conversationRoute;

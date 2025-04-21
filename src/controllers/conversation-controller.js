@@ -1,5 +1,7 @@
 const { error } = require('console');
-const {getAllConversations, getConversationById, createConversation, updateConversation, deleteConversation, addParticipants, removeParticipants, transferAdminRole,grantModRole} = require('../services/conversation-service');
+const {getAllConversations, getConversationById, createConversation, updateConversation, 
+    deleteConversation, addParticipants, removeParticipants, transferAdminRole,
+    grantModRole,updateAllowMessaging} = require('../services/conversation-service');
 const {AppError,handleError,responseFormat } = require("../utils/response-format");
 const userService = require('../services/user-service');
 const { updateSearchIndex } = require('../models/conversation-model');
@@ -212,6 +214,25 @@ const grantModController = async (req, res) => {
     }
 };
 
+// Cập nhật quyền nhắn tin trong nhóm
+const updateAllowMessagingCotroller = async (req, res) => {
+    try {
+        const userId = req.user.id; // Lấy userId từ token
+        const conversationId = req.params.id;
+        const updatedConversation = await updateAllowMessaging(conversationId, userId);
+
+        if (!updatedConversation) {
+            throw new AppError("Failed to update allow messaging", 400);
+        }
+
+        responseFormat(res, updatedConversation, "Update allow messaging successful", true, 200);
+    } catch (error) {
+        handleError(error, res, "Update allow messaging failed");
+    }
+};
+
+
+
 module.exports = {
     getAllConversationsController,
     getConversationByIdController,
@@ -221,5 +242,6 @@ module.exports = {
     addParticipantsController,
     removeParticipantsController,
     transferAdminController,
-    grantModController
+    grantModController,
+    updateAllowMessagingCotroller
 };
