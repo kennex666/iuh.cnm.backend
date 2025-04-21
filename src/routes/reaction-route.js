@@ -11,7 +11,7 @@ reactionRoute.get("/", getAllReactionsController);
 //get reaction by id
 reactionRoute.get("/:id", getReactionByIdController);
 //save reaction
-reactionRoute.post("/", upload.single("file"), createReactionController);
+reactionRoute.post("/", createReactionController);
 //delete reaction
 reactionRoute.delete("/:id", deleteReactionController);
 
