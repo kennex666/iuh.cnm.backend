@@ -2,6 +2,7 @@ const {getAllMessagesController, getMessageByIdController, createMessageControll
 const express = require("express");
 const messageRoute = express.Router();
 const {authMiddleware} = require("../middlewares/auth");
+const checkMessagingPermission = require("../middlewares/checkMessagingPermission");
 
 messageRoute.use(authMiddleware);
 
@@ -9,7 +10,7 @@ messageRoute.get("/" , getAllMessagesController);
 //get message by id
 messageRoute.get("/:id",  getMessageByIdController);
 //save message
-messageRoute.post("/",  createMessageController);
+messageRoute.post("/", checkMessagingPermission ,createMessageController);
 //update message
 messageRoute.put("/:id",  updateMessageController);
 //delete message
