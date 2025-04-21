@@ -34,21 +34,21 @@ const getReactionById = async (req, res) => {
 
 const createReaction = async (data) => {
   try {
-    if (!data.messageId || !data.userId || !data.file) {
+    if (!data.messageId || !data.userId) {
       throw new Error("Thiếu dữ liệu messageId, userId hoặc emoji.");
     }
 
-    const s3Result = await S3FileManager.pushObjectS3(data.file);
+    // const s3Result = await S3FileManager.pushObjectS3(data.file);
 
-    if (!s3Result) {
-      throw new Error("Không thể upload file lên S3.");
-    }
+    // if (!s3Result) {
+    //   throw new Error("Không thể upload file lên S3.");
+    // }
 
     const newReaction = new reactionModel({
       id: data.id,
       messageId: data.messageId,
       userId: data.userId,
-      emoji: s3Result.url
+      emoji: data.emoji
     });
 
     return await newReaction.save();
