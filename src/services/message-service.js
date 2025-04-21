@@ -1,6 +1,9 @@
 const { date } = require('joi');
 const messageModel = require('../models/message-model');
 const conversation = require("../models/conversation-model");
+const { generateIdSnowflake } = require('../utils/id-generators');
+const typeMessage = require('../models/type-message');
+
 
 const getAllMessages = async (userId) => {
     try {
@@ -132,6 +135,33 @@ const getMessageBySenderId = async (userId) => {
     }
 }
 
+const createVote = async ({ senderId, conversationId, question, options, multiple = false }) => {
+    const voteOptions = options.map(text => ({
+      id: generateIdSnowflake().toString(),
+      text,
+      votes: [] // danh sách userId đã vote
+    }));
+  
+    const votePayload = {
+      question,
+      options: voteOptions,
+      multiple
+    };
+  
+    const message = await messageModel.create({
+      conversationId,
+      senderId,
+      content: JSON.stringify(votePayload),
+      type: typeMessage.VOTE,
+      sentAt: new Date(),
+      readBy: [senderId]
+    });
+  
+    return message;
+  };
+
+
+
 module.exports = {
 	getAllMessages,
 	getMessageById,
@@ -141,4 +171,5 @@ module.exports = {
 	getMessageByConversationId,
 	getMessageBySenderId,
 	updateSeen,
+    createVote
 };
