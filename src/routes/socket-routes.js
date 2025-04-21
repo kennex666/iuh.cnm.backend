@@ -84,6 +84,17 @@ const socketRoutes = (io) => {
 			await updateSeen(messageId, socket.user.id);
 		});
 
+		socket.on("block-user:block", async (data) => {
+			try {
+				console.log("data block user", data);
+				await SocketController.handleBlockUser(io, socket, data);
+			} catch (error) {
+				socket.emit("block-user:error", {
+					message: error.message
+				});
+			}
+		})
+
 		// not handled yet
 		socket.on("message:delete_message", (data) => {
 			console.log("send_delete_message:", data);

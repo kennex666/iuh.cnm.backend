@@ -6,9 +6,54 @@ const MemoryManager = require('../utils/memory-manager');
 const { createMessage } = require('../services/message-service');
 const { createAttachment } = require("../services/attachment-service");
 const typeMessage = require('../models/type-message');
-
+const FriendList = require("../models/friend-list-model");
+const BlockList = require("../models/block-list-model");
 
 class SocketController {
+	static async handleBlockUser(io, socket, data) {
+		try {
+			const user = socket.user;
+			const { blockedId } = data;
+			// Check data block user send from client
+			if (!data || !blockedId) {
+				throw new Error(
+					"Data blockedId invalid"
+				);
+			}
+			const isNumeric = /^\d+$/.test(blockedId);
+			if (blockedId.length < 0 || !isNumeric) {
+				throw new Error("blockId invalid");
+			}
+			if (blockedId === user.id) {
+				throw new Error("Can't block myself");
+			}
+			let id1, id2;
+			if (BigInt(user.id) > BigInt(blockedId)) {
+				id1 = user.id;
+				id2 = blockedId
+			} else {
+				id1 = blockedId;
+				id2 = user.id
+			}
+			const blockListExistTask = BlockList.findOne({ $or: [{ userId: user.id, blockedId }, { userId: blockedId, blockedId: user.id }] });
+			const friendListExistTask = FriendList.findOne({ id1, id2 });
+			const [blockListExist, friendListExist] = await Promise.all([blockListExistTask, friendListExistTask]);
+			if (blockListExist) {
+				throw new Error("blocked userpreviously performed block action");
+			}
+			if (friendListExist) {
+				const newBlockList = await BlockList.create({ userId: user.id, blockedId });
+				MemoryManager.getSocketList(blockedId).forEach((socketId) => {
+					io.to(socketId).emit("block-user:blocked", newBlockList.toObject());
+				});
+			} else {
+				throw new Error("blockedId is not friend of user");
+			}
+		} catch (error) {
+			console.error("Error when blocking a user: ", error);
+			throw new Error(error);
+		}
+	}
 	static async handleSendMessage(io, socket, data) {
 		try {
 			// Check data message send from client
@@ -18,7 +63,7 @@ class SocketController {
 				);
 			}
 
-			const { conversationId, content, type, repliedTold, repliedToId} = data;
+			const { conversationId, content, type, repliedTold, repliedToId } = data;
 
 			const userId = socket.user.id;
 
