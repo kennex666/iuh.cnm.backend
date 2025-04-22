@@ -10,6 +10,7 @@ const { AppError, handleError, responseFormat } = require("../utils/response-for
 
 const friendRequestModel = require("../models/friendrequest-model");
 const { createConversation } = require("../services/conversation-service");
+const userService = require("../services/user-service");
 
 
 const getAllFriendRequestsController = async (req, res) => {
@@ -95,14 +96,19 @@ const updateFriendRequestAcceptController = async (req, res) => {
         const { senderId, receiverId,name,avatar } = updatedFriendRequest;
         console.log("senderId:", senderId); // 
         console.log("receiverId:", receiverId);
-        
+        const participantIds=[];
+        const participantInfo=[];
+        participantIds.push(senderId);
+        participantIds.push(receiverId);
+        const user = await userService.getUserById(senderId);
+        participantInfo.push({ id: senderId, name: user.name ,avatar: user.avatar });
+        const user1 = await userService.getUserById(receiverId);
+        participantInfo.push({ id: receiverId, name: user1.name ,avatar: user1.avatar });
         const newConversation = await createConversation({
-            isGroup: false,
-            participants: [senderId, receiverId],
-            name: name,
-            avatar: avatar,
-            adminIds: [],
-            settings: {}
+            type: '1vs1',
+            participantIds,
+            participantInfo,
+            url: `${senderId}-${receiverId}`,
         });
         
         return res.status(200).json({
