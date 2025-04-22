@@ -575,6 +575,70 @@ class SocketController {
 		}
 	}
 	
+	static async handleDeleteConversation(io, socket, data) {
+		try {
+			const { conversationId } = data;
+	
+			// Kiểm tra dữ liệu đầu vào
+			if (!conversationId) {
+				return socket.emit("conversation:error", {
+					message: "Invalid data for deleting conversation",
+				});
+			}
+	
+			// Lấy thông tin cuộc trò chuyện
+			const conversation = await Conversation.findOne({ id: conversationId });
+			if (!conversation) {
+				return socket.emit("conversation:error", {
+					message: "Conversation not found",
+				});
+			}
+	
+			// Lấy thông tin người dùng từ socket
+			const userId = socket.user.id;
+	
+			// Kiểm tra quyền admin
+			const isAdmin = conversation.participantInfo.some(
+				(participant) => participant.id === userId && participant.role === "admin"
+			);
+	
+			if (!isAdmin) {
+				return socket.emit("conversation:error", {
+					message: "You are not authorized to delete this conversation",
+				});
+			}
+	
+			// Xóa cuộc trò chuyện
+			const deletedConversation = await Conversation.findByIdAndDelete(conversationId);
+			if (!deletedConversation) {
+				return socket.emit("conversation:error", {
+					message: "Failed to delete conversation",
+				});
+			}
+	
+			// Gửi thông báo đến tất cả các thành viên trong cuộc trò chuyện
+			const participants = conversation.participantInfo.map((p) => p.id);
+			participants.forEach((participantId) => {
+				const sockets = MemoryManager.getSocketList(participantId);
+				sockets.forEach((socketId) => {
+					io.to(socketId).emit("conversation:deleted", {
+						conversationId,
+						message: "Conversation has been deleted",
+					});
+				});
+			});
+	
+			// Xác nhận cho người gửi
+			socket.emit("conversation:deleted:success", {
+				message: "Conversation deleted successfully",
+			});
+		} catch (error) {
+			console.error("Error deleting conversation:", error);
+			socket.emit("conversation:error", {
+				message: error.message || "Failed to delete conversation",
+			});
+		}
+	}
 }
 
 module.exports = SocketController;

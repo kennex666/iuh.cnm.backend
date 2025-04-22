@@ -238,6 +238,10 @@ const socketRoutes = (io) => {
 		socket.on("message:pin", async (data) => {
 			await SocketController.handlePinMessage(io, socket, data);
 		});
+
+		socket.on("conversation:delete", async (data) => {
+			await SocketController.handleDeleteConversation(io, socket, data);
+		});
 	});
 };
 
