@@ -9,8 +9,145 @@ const typeMessage = require('../models/type-message');
 const FriendList = require("../models/friend-list-model");
 const BlockList = require("../models/block-list-model");
 const typeRoleUser = require('../models/type-role-user');
+const friendRequestModel = require('../models/friendrequest-model');
+const { createFriendRequest } = require('../services/friendrequest-service');
+const typeRequest = require('../models/type-request');
+const UserModel = require('../models/user-model');
 
 class SocketController {
+	static async handleDenyingFriendRequest(io, socket, data) {
+		const { senderId, receiverId } = data;
+		const user = socket.user;
+		if (receiverId !== user.id) {
+			throw new Error("Không thể hủy lời mời kết bạn của người khác");
+		}
+		const friendRequest = await friendRequestModel.findOneAndUpdate(
+			{ senderId: senderId, receiverId: receiverId },
+			{ status: typeRequest.DECLINE }
+		);
+		const socketList = MemoryManager.getSocketList(senderId);
+		console.log("socketList", socketList);
+		socketList.forEach((socketId) => {
+			io.to(socketId).emit("friend_request:new_deny", friendRequest.toObject());
+		});
+	}
+	static async handleAcceptFriendRequest(io, socket, data) {
+		console.log("send_accept_friend_request:", data);
+		const { senderId, receiverId } = data;
+		const user = socket.user;
+		if (receiverId !== user.id) {
+			throw new Error("Không thể chấp nhận lời mời kết bạn của người khác");
+		}
+		const friendRequest = await friendRequestModel.findOne({ senderId, receiverId });
+		if (!friendRequest) {
+			throw new Error("Lời mời kết bạn không tồn tại");
+		}
+		if (friendRequest.status !== typeRequest.PENDING) {
+			throw new Error("Lời mời kết bạn đã được xử lý trước đó");
+		}
+		await friendRequestModel.deleteOne(
+			{ id: friendRequest.id }
+		);
+		let id1, id2;
+		if (BigInt(senderId) > BigInt(receiverId)) {
+			id1 = senderId;
+			id2 = receiverId
+		} else {
+			id1 = receiverId;
+			id2 = senderId
+		}
+		await FriendList.create({ id1, id2 });
+		const [user1, user2] = await Promise.all([
+			UserModel.findOne({ id: id1 }),
+			UserModel.findOne({ id: id2 }),
+		]);
+		console.log("user1", user1);
+		console.log("user2", user2);
+		await Conversation.create({
+			type: '1vs1',
+			participantIds: [user.id, receiverId],
+			participantInfo: [
+				{ id: id1, name: user1.name, avt: user1.avatarUrl, nickname: user1.name },
+				{ id: id2, name: user2.name, avt: user2.avatarUrl, nickname: user1.name }
+			]
+		});
+		const socketList = MemoryManager.getSocketList(senderId);
+		socketList.forEach((socketId) => {
+			io.to(socketId).emit("friend_request:new_accept", data);
+		});
+	}
+	static async handleSendFriendRequest(io, socket, data) {
+		console.log("send_friend_request:", data);
+		const { receiverId } = data;
+		const user = socket.user;
+
+		if (receiverId === user.id) {
+			throw new Error("Không thể gửi lời mời kết bạn cho chính mình");
+		}
+		const friendRequest = await friendRequestModel.findOne(
+			{
+				$or: [
+					{ senderId: user.id, receiverId: receiverId },
+					{ senderId: receiverId, receiverId: user.id }
+				]
+			}
+		);
+		// user chưa gửi lời mời kết bạn cho người khác
+		if (!friendRequest) {
+			const newFriendRequest = await createFriendRequest(
+				{
+					senderId: user.id,
+					receiverId: receiverId,
+					status: typeRequest.PENDING,
+				}
+			);
+			const socketList = MemoryManager.getSocketList(receiverId);
+			socketList.forEach((socketId) => {
+				io.to(socketId).emit("friend_request:new", newFriendRequest.toObject());
+			});
+			return;
+		}
+		// user đã gửi lời mời kết bạn cho người khác
+		if (friendRequest.senderId === user.id) {
+			if (friendRequest.status === typeRequest.PENDING) {
+				throw new Error("Đã gửi lời mời kết bạn cho người này, đang đợi phản hồi");
+			}
+			if (friendRequest.status === typeRequest.DECLINE) {
+				throw new Error("Không thể gửi lời mời kết bạn cho người này");
+			}
+		}
+		// user đã nhận lời mời kết bạn từ người khác
+		if (friendRequest.senderId === receiverId) {
+			await friendRequestModel.deleteOne(
+				{ id: friendRequest.id }
+			);
+			let id1, id2;
+			if (BigInt(user.id) > BigInt(receiverId)) {
+				id1 = user.id;
+				id2 = receiverId
+			} else {
+				id1 = receiverId;
+				id2 = user.id
+			}
+			await FriendList.create({ id1, id2 });
+			const [user1, user2] = await Promise.all([
+				UserModel.findOne({ id: id1 }, 'id name avatarUrl'),
+				UserModel.findOne({ id: id2 }, 'id name avatarUrl'),
+			]);
+			await Conversation.create({
+				type: '1vs1',
+				participantIds: [user.id, receiverId],
+				participantInfo: [
+					{ id: id1, name: user1.name, avatarUrl: user1.avatarUrl },
+					{ id: id2, name: user2.name, avatarUrl: user2.avatarUrl }
+				]
+			});
+			const socketList = MemoryManager.getSocketList(receiverId);
+			socketList.forEach((socketId) => {
+				io.to(socketId).emit("friend_request:new_accept", data);
+			});
+		}
+	}
 	static async handleDeleteMessage(io, socket, data) {
 		const { messageId, forEveryone, conversationId } = data;
 		const user = socket.user;
@@ -18,7 +155,6 @@ class SocketController {
 		if (!messageId || typeof forEveryone !== 'boolean' || !conversationId || typeof conversationId !== 'string') {
 			throw new Error("Invalid request data");
 		}
-
 
 		const conversationTask = Conversation.findOne({ id: conversationId });
 		const messageTask = messageModel.findOne({ id: messageId, conversationId });
@@ -159,7 +295,7 @@ class SocketController {
 			}
 
 			// Check if user has permission to send message
-			if (!conversation.participants.includes(userId)) {
+			if (!conversation.participantIds.includes(userId)) {
 				throw new Error(
 					"You do not have permission to send messages in this conversation"
 				);
