@@ -11,7 +11,7 @@ const {getAllConversationsController, getConversationByIdController,
 	createConversationController, updateConversationController, 
 	deleteConversationController,addParticipantsController, removeParticipantsController, 
 	transferAdminController, grantModController,
-	updateAllowMessagingCotroller} = require("../controllers/conversation-controller");
+	updateAllowMessagingCotroller,pinMessageController} = require("../controllers/conversation-controller");
 
 
 class SocketController {
@@ -409,7 +409,7 @@ class SocketController {
 				});
 			}
 	
-			const message = await MessageModel.findOne({ _id: voteId, conversationId });
+			const message = await messageModel.findOne({ _id: voteId, conversationId });
 			if (!message) {
 				return socket.emit("vote:error", {
 					message: "Vote not found",
@@ -475,7 +475,7 @@ class SocketController {
 				});
 			}
 	
-			const message = await MessageModel.findOne({ _id: voteId, conversationId });
+			const message = await messageModel.findOne({ _id: voteId, conversationId });
 			if (!message) {
 				return socket.emit("vote:error", {
 					message: "Vote not found",
@@ -493,9 +493,6 @@ class SocketController {
 			});
 		}
 	}
-
-
-
 }
 
 module.exports = SocketController;
