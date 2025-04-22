@@ -2,7 +2,6 @@ class SocketHandler {
     socket = null;
     constructor(socket) {
         this.socket = socket;
-        this.connectHandler();
         this.roomHandler();
         this.joinHandler();
         this.signalHandler();
@@ -10,20 +9,6 @@ class SocketHandler {
     }
 
     // 🔹 Khi socket kết nối
-    connectHandler() {
-        this.socket.on("connect", async () => {
-            windowEventHandler.myId = socket.id;
-            await windowEventHandler.startLocalStream();
-            this.socket.emit("join-room", {
-                roomId: ROOM_ID,
-                userId,
-                conversationId,
-                callId: messageId,
-            });
-        });
-
-    }
-
     // 🔹 Nhận danh sách người trong phòng → gọi offer
     roomHandler() {
         this.socket.on("room-users", async (users) => {

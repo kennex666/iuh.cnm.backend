@@ -83,51 +83,5 @@ class WebRTCHandler {
 		}
 	}
 
-	static async startScreenShare(btn) {
-		try {
-			screenStream = await navigator.mediaDevices.getDisplayMedia({
-				video: true,
-				audio: false, // Nếu muốn share âm thanh thì true
-			});
-
-			// Tạo thẻ video
-			screenVideo = document.createElement("video");
-			screenVideo.srcObject = screenStream;
-			screenVideo.autoplay = true;
-			screenVideo.playsInline = true;
-			screenVideo.className =
-				"bg-black w-full aspect-video rounded-xl shadow-lg ring-2 ring-yellow-500 object-cover transition-all duration-300 scale-95 opacity-0";
-
-			// Thêm vào DOM
-			const groupVideo = windowEventHandler.groupVideo;
-			groupVideo.appendChild(screenVideo);
-
-			// Animate cho ngọt
-			requestAnimationFrame(() => {
-				screenVideo.classList.remove("scale-95", "opacity-0");
-			});
-
-			// Cập nhật lại layout
-			windowEventHandler.updateGridVideo();
-
-			// Xử lý khi người dùng dừng chia sẻ
-			screenStream.getVideoTracks()[0].onended = () => {
-				stopScreenShare();
-			};
-		} catch (err) {
-			console.error("❌ Không thể chia sẻ màn hình:", err);
-		}
-	}
-
-	static stopScreenShare() {
-		if (screenStream) {
-			screenStream.getTracks().forEach((track) => track.stop());
-			screenStream = null;
-		}
-		if (screenVideo) {
-			screenVideo.remove();
-			screenVideo = null;
-		}
-		windowEventHandler.updateGridVideo();
-	}
+	
 }

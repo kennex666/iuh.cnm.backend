@@ -42,25 +42,25 @@
 	<div class="bg-gray-800 p-4">
 		<div class="flex flex-row items-center justify-center space-x-4">
 			<button
-				onclick="toggleCamera(this)"
+				onclick="windowEventHandler.toggleCamera(this)"
 				class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition"
 			>
 				Tắt cam
 			</button>
 			<button
-				onclick="toggleMute(this)"
+				onclick="windowEventHandler.toggleMute(this)"
 				class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded transition"
 			>
 				Tắt tiếng
 			</button>
 			<button
-				onclick="startScreenShare(this)"
+				onclick="windowEventHandler.startScreenShare(this)"
 				class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded transition"
 			>
 			  Chia sẻ màn hình
 			</button>
 			<button
-				onclick="hangUp(this)"
+				onclick="windowEventHandler.hangUp(this)"
 				class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded transition"
 			>
 				Rời phòng
