@@ -39,7 +39,7 @@ class SocketController {
 			}
 
 			// Check if user has permission to send message
-			if (!conversation.participants.includes(userId)) {
+			if (!conversation.participantIds.includes(userId)) {
 				throw new Error(
 					"You do not have permission to send messages in this conversation"
 				);
@@ -55,7 +55,7 @@ class SocketController {
 			console.log(`Message created:`, message);
 
 			// get all participants of conversation
-			const participants = conversation.participants.map((participant) =>
+			const participants = conversation.participantIds.map((participant) =>
 				participant.toString()
 			);
 			participants.forEach((participant) => {
@@ -126,7 +126,7 @@ class SocketController {
 			}
 
 			// Check if user has permission to send message
-			if (!conversation.participants.includes(userId)) {
+			if (!conversation.participantIds.includes(userId)) {
 				throw new Error(
 					"You do not have permission to send messages in this conversation"
 				);
@@ -157,7 +157,7 @@ class SocketController {
 			});
 
 			// Gửi thông báo đến tất cả người tham gia cuộc trò chuyện
-			const participants = conversation.participants.map((participant) =>
+			const participants = conversation.participantIds.map((participant) =>
 				participant.toString()
 			);
 			participants.forEach((participant) => {
