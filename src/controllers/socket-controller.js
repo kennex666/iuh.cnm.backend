@@ -28,7 +28,7 @@ class SocketController {
 		const socketList = MemoryManager.getSocketList(senderId);
 		console.log("socketList", socketList);
 		socketList.forEach((socketId) => {
-			io.to(socketId).emit("friend_request:new_deny", friendRequest.toObject());
+			io.to(socketId).emit("friend_request:new_deny", { senderId, receiverId, status: "declined" });
 		});
 	}
 	static async handleAcceptFriendRequest(io, socket, data) {
@@ -63,17 +63,17 @@ class SocketController {
 		]);
 		console.log("user1", user1);
 		console.log("user2", user2);
-		await Conversation.create({
+		const conversation = await Conversation.create({
 			type: '1vs1',
 			participantIds: [user.id, receiverId],
 			participantInfo: [
 				{ id: id1, name: user1.name, avt: user1.avatarUrl, nickname: user1.name },
-				{ id: id2, name: user2.name, avt: user2.avatarUrl, nickname: user1.name }
+				{ id: id2, name: user2.name, avt: user2.avatarUrl, nickname: user2.name }
 			]
 		});
 		const socketList = MemoryManager.getSocketList(senderId);
 		socketList.forEach((socketId) => {
-			io.to(socketId).emit("friend_request:new_accept", data);
+			io.to(socketId).emit("friend_request:new_accept", { conversationId: conversation.id, user1, user2, status: "accepted" });
 		});
 	}
 	static async handleSendFriendRequest(io, socket, data) {
@@ -134,7 +134,7 @@ class SocketController {
 				UserModel.findOne({ id: id1 }, 'id name avatarUrl'),
 				UserModel.findOne({ id: id2 }, 'id name avatarUrl'),
 			]);
-			await Conversation.create({
+			const conversation = await Conversation.create({
 				type: '1vs1',
 				participantIds: [user.id, receiverId],
 				participantInfo: [
@@ -144,7 +144,7 @@ class SocketController {
 			});
 			const socketList = MemoryManager.getSocketList(receiverId);
 			socketList.forEach((socketId) => {
-				io.to(socketId).emit("friend_request:new_accept", data);
+				io.to(socketId).emit("friend_request:new_accept", { conversationId: conversation.id, user1, user2, status: "accepted" });
 			});
 		}
 	}
@@ -167,12 +167,12 @@ class SocketController {
 		}
 
 		const isOwner = message.senderId === user.id;
-		let isAdmin = false;
+		let isAdminOrMod = false;
 		if (conversation.type === "group") {
-			isAdmin = conversation.participantInfo.some(p => p.id === user.id && p.role === typeRoleUser.ADMIN);
+			isAdminOrMod = conversation.participantInfo.some(p => p.id === user.id && (p.role === typeRoleUser.ADMIN || p.role === typeRoleUser.MOD));
 		}
 		if (forEveryone) {
-			if (!(isOwner || isAdmin)) {
+			if (!(isOwner || isAdminOrMod)) {
 				throw new Error("Only sender can delete for everyone");
 			}
 
