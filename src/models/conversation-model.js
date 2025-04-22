@@ -1,59 +1,83 @@
 const mongoose = require('mongoose');
 const { Schema, model } = mongoose;
 const { generateIdSnowflake } = require("../utils/id-generators");
+const typeMessage = require('./type-message');
+const typeRoleUser = require('./type-role-user');
+// Schema phụ cho participantInfo
+const participantInfoSchema = new Schema({
+	id: { type: String, required: true },
+	name: { type: String, required: true },
+	avt: { type: String, default: "" },
+	nickname: { type: String, default: "" },
+	role: { type: String, enum: typeRoleUser, default: 'member' },
+}, { _id: false });
 
-// Định nghĩa schema cho Conversation
+// Schema phụ cho tin nhắn pin
+const pinMessageSchema = new Schema({
+	id: { type: String, required: true },
+	senderId: { type: String, required: true },
+	content: { type: String, default: "" },
+	type: { type: String, enum: typeMessage, required: true },
+	sentAt: { type: Date, required: true },
+}, { _id: false });
+
+// Schema phụ cho pendingList trong settings
+const pendingUserSchema = new Schema({
+	id: { type: String, required: true },
+	name: { type: String, required: true },
+	avt: { type: String, default: "" }
+}, { _id: false });
+
+// Settings schema
+const settingsSchema = new Schema({
+	isReviewNewParticipant: { type: Boolean, default: false },
+	pendingList: { type: [pendingUserSchema], default: [] },
+	isAllowReadNewMessage: { type: Boolean, default: true },
+	isAllowMessaging: { type: Boolean, default: true }
+}, { _id: false });
+
+// Main Conversation schema
 const conversationSchema = new Schema({
 	id: { type: String, default: generateIdSnowflake, unique: true },
 	isGroup: { type: Boolean, default: false },
 	name: { type: String, default: "" },
-	avatar: { type: String, default: "" },
-	participants: { type: Array, default: [] },
-	adminIds: { type: Array, default: [] },
-	settings: { type: Object, default: {} },
-	lastMessage: {
-		type: mongoose.Schema.Types.ObjectId,
-		ref: "messageModel", // 💡 ref giúp populate
-		default: null,
-	},
+	avatarUrl: { type: String, default: "" },
+	avatarGroup: { type: String, default: "" },
+	type: { type: String, enum: ['1vs1', 'group'], required: true },
+	url: { type: String, default: "" },
+	participantIds: { type: [String], default: [] },
+	participantInfo: { type: [participantInfoSchema], default: [] },
+	pinMessages: { type: [pinMessageSchema], default: [] },
+	settings: { type: settingsSchema, default: () => ({}) },
 	createdAt: { type: Date, default: Date.now },
 	updatedAt: { type: Date, default: Date.now },
+}, {
+	versionKey: false
 });
 
-// Middleware: tự động gán 'id' từ '_id' của MongoDB khi lưu
-// conversationSchema.pre('save', function (next) {
-//     if (this.isNew || this.id === undefined) {
-//         this.id = this._id.toString();
-//     }
-//     next();
-// });
-
-// Middleware: tự động cập nhật 'updatedAt' khi tài liệu được cập nhật
+// Cập nhật tự động updatedAt
 conversationSchema.pre('findOneAndUpdate', function (next) {
-    this.set({ updatedAt: Date.now() });
-    next();
+	this.set({ updatedAt: Date.now() });
+	next();
 });
 
-// Middleware: tự động cập nhật 'updatedAt' khi tài liệu được cập nhật
 conversationSchema.pre('updateOne', function (next) {
-    this.set({ updatedAt: Date.now() });
-    next();
+	this.set({ updatedAt: Date.now() });
+	next();
 });
 
+// Static methods (sử dụng id tự tạo)
 conversationSchema.statics.findById = function (id) {
-	return this.findOne({ id: id })
+	return this.findOne({ id });
 };
 
 conversationSchema.statics.findByIdAndDelete = function (id) {
-    return this.findOneAndDelete({ id: id })
-}
+	return this.findOneAndDelete({ id });
+};
 
 conversationSchema.statics.findByIdAndUpdate = function (id, update) {
-    return this.findOneAndUpdate({ id: id }, update, { new: true });
-}
+	return this.findOneAndUpdate({ id }, update, { new: true });
+};
 
-// Tạo model Conversation từ schema
-const conversation = model('conversation', conversationSchema);
-
-// Export model Conversation
-module.exports = conversation;
+const Conversation = model('conversation', conversationSchema);
+module.exports = Conversation;

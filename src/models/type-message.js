@@ -4,6 +4,7 @@ const typeMessage = Object.freeze({
     FILE: 'file',
     REACTION: 'reaction',
     CALL: 'call',
+    SYSTEM: 'system',
 });
 
 module.exports = typeMessage;

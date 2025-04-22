@@ -89,6 +89,7 @@ const socketRoutes = (io) => {
 				console.log("data block user", data);
 				await SocketController.handleBlockUser(io, socket, data);
 			} catch (error) {
+				console.error("Error when blocking a user: ", error.message);
 				socket.emit("block-user:error", {
 					message: error.message
 				});
@@ -99,17 +100,13 @@ const socketRoutes = (io) => {
 				console.log("data unblock user", data);
 				await SocketController.handleUnBlockUser(io, socket, data);
 			} catch (error) {
+				console.error("Error when unblocking a user: ", error.message);
 				socket.emit("block-user:error", {
 					message: error.message
 				});
 			}
 		})
 
-		// not handled yet
-		socket.on("message:delete_message", (data) => {
-			console.log("send_delete_message:", data);
-			const { messageId } = data;
-		});
 		socket.on("send_friend_request", async (data) => {
 			console.log("send_friend_request:", data);
 			if (data.senderId !== socket.user.id) {
@@ -145,10 +142,17 @@ const socketRoutes = (io) => {
 			console.log(`❌ Client disconnected: ${socket.id}`);
 		});
 
-		socket.on("message:delete_message", (data) => {
-			console.log("send_delete_message:", data);
-			const { messageId } = data;
+		socket.on("message:delete_message", async (data) => {
+			try {
+				SocketController.handleDeleteMessage(io, socket, data);
+			} catch (err) {
+				console.error("Error deleting message:", err);
+				socket.emit("message:delete_failed", {
+					message: err.message
+				});
+			}
 		});
+
 
 		socket.on("friend_request:send", async (data) => {
 			console.log("send_friend_request:", data);
@@ -323,7 +327,7 @@ const exitRoom = async (conversationId, userId) => {
 
 	const dataMessage = {
 		conversationId: conversationId,
-		senderId: conversation.participants[0],
+		senderId: conversation.participantIds[0],
 		type: "call",
 		content: "end",
 		readBy: userId,
@@ -332,7 +336,7 @@ const exitRoom = async (conversationId, userId) => {
 	const message = await messageModel.create(dataMessage);
 	conversation.lastMessage = message._id;
 	await conversation.save();
-	sendMessage(getIO(), conversation.participants, message);
+	sendMessage(getIO(), conversation.participantIds, message);
 	return {
 		errorCode: 200,
 		errorMessage: "Cuộc gọi đã kết thúc",
