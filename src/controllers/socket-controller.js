@@ -13,47 +13,82 @@ class SocketController {
 	static async handleBlockUser(io, socket, data) {
 		try {
 			const user = socket.user;
-			const { blockedId } = data;
+			const { blockId } = data;
 			// Check data block user send from client
-			if (!data || !blockedId) {
+			if (!data || !blockId) {
 				throw new Error(
-					"Data blockedId invalid"
+					"Data blockId invalid"
 				);
 			}
-			const isNumeric = /^\d+$/.test(blockedId);
-			if (blockedId.length < 0 || !isNumeric) {
+			const isNumeric = /^\d+$/.test(blockId);
+			if (blockId.length < 0 || !isNumeric) {
 				throw new Error("blockId invalid");
 			}
-			if (blockedId === user.id) {
+			if (blockId === user.id) {
 				throw new Error("Can't block myself");
 			}
 			let id1, id2;
-			if (BigInt(user.id) > BigInt(blockedId)) {
+			if (BigInt(user.id) > BigInt(blockId)) {
 				id1 = user.id;
-				id2 = blockedId
+				id2 = blockId
 			} else {
-				id1 = blockedId;
+				id1 = blockId;
 				id2 = user.id
 			}
-			const blockListExistTask = BlockList.findOne({ $or: [{ userId: user.id, blockedId }, { userId: blockedId, blockedId: user.id }] });
+			const blockListExistTask = BlockList.findOne({ $or: [{ userId: user.id, blockedId: blockId }, { userId: blockId, blockedId: user.id }] });
 			const friendListExistTask = FriendList.findOne({ id1, id2 });
 			const [blockListExist, friendListExist] = await Promise.all([blockListExistTask, friendListExistTask]);
 			if (blockListExist) {
 				throw new Error("blocked userpreviously performed block action");
 			}
 			if (friendListExist) {
-				const newBlockList = await BlockList.create({ userId: user.id, blockedId });
-				MemoryManager.getSocketList(blockedId).forEach((socketId) => {
+				const newBlockList = await BlockList.create({ userId: user.id, blockedId: blockId });
+				MemoryManager.getSocketList(blockId).forEach((socketId) => {
 					io.to(socketId).emit("block-user:blocked", newBlockList.toObject());
 				});
 			} else {
 				throw new Error("blockedId is not friend of user");
 			}
 		} catch (error) {
-			console.error("Error when blocking a user: ", error);
+			console.error("Error when blocking a user: ", error.message);
 			throw new Error(error);
 		}
 	}
+	static async handleUnBlockUser(io, socket, data) {
+		try {
+			const user = socket.user;
+			const { blockId } = data;
+			// Check data block user send from client
+			if (!data || !blockId) {
+				throw new Error(
+					"Data blockId invalid"
+				);
+			}
+			const isNumeric = /^\d+$/.test(blockId);
+			if (blockId.length < 0 || !isNumeric) {
+				throw new Error("blockId invalid");
+			}
+			// Check if unblock myself
+			if (blockId === user.id) {
+				throw new Error("Can't unblock myself");
+			}
+
+			const blockListExist = await BlockList.findOne({ userId: user.id, blockedId: blockId });
+			console.log(blockListExist);
+			console.log({ userId: user.id, blockedId: blockId });
+			if (blockListExist) {
+				await BlockList.findOneAndDelete({ _id: blockListExist._id });
+				MemoryManager.getSocketList(blockId).forEach((socketId) => {
+					io.to(socketId).emit("block-user:unblocked", { unblockStatus: true });
+				});
+			} else {
+				throw new Error("you do not have permission to unblock");
+			}
+		} catch (error) {
+			console.error("Error when unblocking a user: ", error.message);
+			throw new Error(error);
+		}
+	};
 	static async handleSendMessage(io, socket, data) {
 		try {
 			// Check data message send from client

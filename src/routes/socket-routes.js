@@ -93,6 +93,16 @@ const socketRoutes = (io) => {
 					message: error.message
 				});
 			}
+		});
+		socket.on("block-user:unblock", async (data) => {
+			try {
+				console.log("data unblock user", data);
+				await SocketController.handleUnBlockUser(io, socket, data);
+			} catch (error) {
+				socket.emit("block-user:error", {
+					message: error.message
+				});
+			}
 		})
 
 		// not handled yet
