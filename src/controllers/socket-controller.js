@@ -3,7 +3,7 @@ const Conversation = require('../models/conversation-model');
 const User = require('../models/user-model');
 const SocketService = require('../services/socket-service');
 const MemoryManager = require('../utils/memory-manager');
-const { createMessage } = require('../services/message-service');
+const { createMessage, createVote } = require('../services/message-service');
 const { createAttachment } = require("../services/attachment-service");
 const typeMessage = require('../models/type-message');
 
@@ -11,7 +11,7 @@ const {getAllConversationsController, getConversationByIdController,
 	createConversationController, updateConversationController, 
 	deleteConversationController,addParticipantsController, removeParticipantsController, 
 	transferAdminController, grantModController,
-	updateAllowMessagingCotroller} = require("../controllers/conversation-controller");
+	updateAllowMessagingCotroller,pinMessageController} = require("../controllers/conversation-controller");
 
 
 class SocketController {
@@ -356,7 +356,143 @@ class SocketController {
 		}
 	}
 
+	static async handleCreateVote(io, socket, data){
+		try {
+			const { conversationId, question, options, multiple } = data;
+	
+			if (!conversationId || !question || !Array.isArray(options) || options.length < 2) {
+				return socket.emit("vote:error", {
+					message: "Invalid data for creating vote",
+				});
+			}
+	
+			const voteMessage = await createVote({
+				senderId: socket.user.id,
+				conversationId,
+				question,
+				options,
+				multiple,
+			});
+	
+			// Gửi thông báo đến tất cả các thành viên trong cuộc trò chuyện
+			const conversation = await Conversation.findOne({ id: conversationId });
+			if (!conversation) {
+				return socket.emit("vote:error", {
+					message: "Conversation not found",
+				});
+			}
+	
+			conversation.participantInfo.forEach((participant) => {
+				const sockets = MemoryManager.getSocketList(participant.id);
+				sockets.forEach((socketId) => {
+					io.to(socketId).emit("vote:created", {
+						conversationId,
+						vote: voteMessage,
+					});
+				});
+			});
+		} catch (error) {
+			console.error("Error creating vote:", error);
+			socket.emit("vote:error", {
+				message: "Failed to create vote",
+			});
+		}
+	}
 
+	static async handleSubmitVote(io, socket, data){
+		try {
+			const { conversationId, voteId, optionId } = data;
+	
+			if (!conversationId || !voteId || !optionId) {
+				return socket.emit("vote:error", {
+					message: "Invalid data for submitting vote",
+				});
+			}
+	
+			const message = await messageModel.findOne({ _id: voteId, conversationId });
+			if (!message) {
+				return socket.emit("vote:error", {
+					message: "Vote not found",
+				});
+			}
+	
+			const votePayload = JSON.parse(message.content);
+			const option = votePayload.options.find((opt) => opt.id === optionId);
+	
+			if (!option) {
+				return socket.emit("vote:error", {
+					message: "Option not found",
+				});
+			}
+	
+			// Kiểm tra nếu người dùng đã vote
+			if (option.votes.includes(socket.user.id)) {
+				return socket.emit("vote:error", {
+					message: "You have already voted for this option",
+				});
+			}
+	
+			// Cập nhật danh sách người đã vote
+			option.votes.push(socket.user.id);
+	
+			// Lưu lại kết quả vote
+			message.content = JSON.stringify(votePayload);
+			await message.save();
+	
+			// Gửi thông báo đến tất cả các thành viên trong cuộc trò chuyện
+			const conversation = await Conversation.findOne({ id: conversationId });
+			if (!conversation) {
+				return socket.emit("vote:error", {
+					message: "Conversation not found",
+				});
+			}
+	
+			conversation.participantInfo.forEach((participant) => {
+				const sockets = MemoryManager.getSocketList(participant.id);
+				sockets.forEach((socketId) => {
+					io.to(socketId).emit("vote:updated", {
+						conversationId,
+						vote: message,
+					});
+				});
+			});
+		} catch (error) {
+			console.error("Error submitting vote:", error);
+			socket.emit("vote:error", {
+				message: "Failed to submit vote",
+			});
+		}
+		
+	}
+
+	static async handleGetVote(io, socket, data){
+		try {
+			const { conversationId, voteId } = data;
+	
+			if (!conversationId || !voteId) {
+				return socket.emit("vote:error", {
+					message: "Invalid data for getting vote",
+				});
+			}
+	
+			const message = await messageModel.findOne({ _id: voteId, conversationId });
+			if (!message) {
+				return socket.emit("vote:error", {
+					message: "Vote not found",
+				});
+			}
+	
+			socket.emit("vote:result", {
+				conversationId,
+				vote: message,
+			});
+		} catch (error) {
+			console.error("Error getting vote:", error);
+			socket.emit("vote:error", {
+				message: "Failed to get vote",
+			});
+		}
+	}
 }
 
 module.exports = SocketController;

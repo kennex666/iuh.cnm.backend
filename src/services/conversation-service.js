@@ -1,4 +1,5 @@
 const conversation = require('../models/conversation-model');
+const messageModel = require('../models/message-model');
 const { AppError } = require('../utils/response-format');
 
 const getAllConversations = async (userId) => {
@@ -249,6 +250,40 @@ const updateAllowMessaging = async (conversationId, userId) => {
     return conversations;
 }
 
+// ghin tên nhắn và tối đa là 3, nếu ghin tin nhắn thứ 4 thì xóa tin nhắn đầu tiên
+const pinMessage = async (conversationId, messageId) => {
+    const conversations = await conversation.findOne({ id: conversationId });
+    if (!conversations) throw new AppError('Conversation not found', 404);
+
+    // Kiểm tra xem tin nhắn đã được ghim chưa
+    const isPinned = conversations.pinMessages.some(msg => msg.id === messageId);
+    if (isPinned) {
+        throw new AppError('Message already pinned', 400);
+    }
+
+    // lấy toàn bộ thông tin của tin nhắn
+    const message = await messageModel.findOne({ id: messageId });
+    if (!message) throw new AppError('Message not found', 404);
+
+    // Ghim tin nhắn
+    if (conversations.pinMessages.length >= 3) {
+        conversations.pinMessages.shift(); // Xóa tin nhắn đầu tiên nếu đã có 3 tin nhắn ghim
+    }
+    conversations.pinMessages.push({
+        id: message.id,
+        conversationId: message.conversationId,
+        senderId: message.senderId,
+        content: message.content,
+        type: message.type,
+        repliedTold: message.repliedTold,
+        sentAt: message.sentAt,
+        readBy: message.readBy,
+    });
+
+    await conversations.save();
+    return conversations;
+};
+
 
 
 module.exports = {
@@ -262,5 +297,6 @@ module.exports = {
     removeParticipants,
     transferAdminRole,
     grantModRole,
-    updateAllowMessaging
+    updateAllowMessaging,
+    pinMessage
 };
