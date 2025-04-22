@@ -202,6 +202,26 @@ const socketRoutes = (io) => {
 				});
 			}
 		});
+
+		socket.on("conversation:add_participants", async (data) => {
+			await SocketController.handleAddParticipants(io, socket, data);
+		});
+	
+		socket.on("conversation:remove_participants", async (data) => {
+			await SocketController.handleRemoveParticipants(io, socket, data);
+		});
+	
+		socket.on("conversation:transfer_admin", async (data) => {
+			await SocketController.handleTransferAdmin(io, socket, data);
+		});
+	
+		socket.on("conversation:grant_mod", async (data) => {
+			await SocketController.handleGrantMod(io, socket, data);
+		});
+	
+		socket.on("conversation:update_allow_messaging", async (data) => {
+			await SocketController.handleUpdateAllowMessaging(io, socket, data);
+		});
 	});
 };
 

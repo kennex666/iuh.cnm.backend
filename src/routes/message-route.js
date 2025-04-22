@@ -1,7 +1,10 @@
-const {getAllMessagesController, getMessageByIdController, createMessageController, updateMessageController, deleteMessageController, getMessageByConversationIdController, getMessageBySenderIdController} = require('../controllers/message-controller');
+const {getAllMessagesController, getMessageByIdController, createMessageController, 
+    updateMessageController, deleteMessageController, getMessageByConversationIdController,
+     getMessageBySenderIdController,createVoteController} = require('../controllers/message-controller');
 const express = require("express");
 const messageRoute = express.Router();
 const {authMiddleware} = require("../middlewares/auth");
+const checkMessagingPermission = require("../middlewares/checkMessagingPermission");
 
 messageRoute.use(authMiddleware);
 
@@ -9,7 +12,7 @@ messageRoute.get("/" , getAllMessagesController);
 //get message by id
 messageRoute.get("/:id",  getMessageByIdController);
 //save message
-messageRoute.post("/",  createMessageController);
+messageRoute.post("/", checkMessagingPermission ,createMessageController);
 //update message
 messageRoute.put("/:id",  updateMessageController);
 //delete message
@@ -18,6 +21,8 @@ messageRoute.delete("/:id",  deleteMessageController);
 messageRoute.get("/conversation/:id",  getMessageByConversationIdController);
 //get message by senderId
 messageRoute.get("/sender/:id",  getMessageBySenderIdController);
+//create vote
+messageRoute.post("/vote", checkMessagingPermission ,createVoteController);
 
 module.exports = messageRoute;
 

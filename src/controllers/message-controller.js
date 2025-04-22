@@ -1,4 +1,5 @@
-const {getAllMessages, getMessageById, createMessage, updateMessage, deleteMessage, getMessageByConversationId,getMessageBySenderId} = require("../services/message-service");
+const {getAllMessages, getMessageById, createMessage, updateMessage, 
+    deleteMessage, getMessageByConversationId,getMessageBySenderId, createVote} = require("../services/message-service");
 const {handleError,responseFormat,AppError } = require("../utils/response-format");
 const getAllMessagesController = async (req, res) => {
     try {
@@ -105,6 +106,29 @@ const getMessageBySenderIdController = async (req, res) => {
     }
 }
 
+const createVoteController = async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const { conversationId, question, options, multiple = false } = req.body;
+  
+      if (!question || !Array.isArray(options) || options.length < 2) {
+        return res.status(400).json({ message: "Vote must have a question and at least 2 options" });
+      }
+  
+      const result = await createVote({
+        senderId: userId,
+        conversationId,
+        question,
+        options,
+        multiple
+      });
+  
+      responseFormat(res, result, "Vote created successfully", true, 201);
+    } catch (error) {
+      handleError(error, res, "Create vote failed");
+    }
+  };
+
 module.exports = {
     getAllMessagesController,
     getMessageByIdController,
@@ -113,4 +137,5 @@ module.exports = {
     deleteMessageController,
     getMessageByConversationIdController,
     getMessageBySenderIdController,
+    createVoteController
 };
