@@ -133,11 +133,6 @@ class EventHandler {
 
             webrtc.sendTrackToAllPeers(screenTrack, this.screenStream, "screen");
             
-
-            this.socket.emit("screen:share-start", {
-				from: windowEventHandler.myId,
-				trackId: screenTrack.id,
-			});
 			// Xử lý khi người dùng dừng chia sẻ
 			this.screenStream.getVideoTracks()[0].onended = async () => {
 				this.stopScreenShare();
