@@ -8,6 +8,7 @@ const { createAttachment } = require("../services/attachment-service");
 const typeMessage = require('../models/type-message');
 const FriendList = require("../models/friend-list-model");
 const BlockList = require("../models/block-list-model");
+const typeRoleUser = require('../models/type-role-user');
 
 class SocketController {
 	static async handleDeleteMessage(io, socket, data) {
@@ -18,8 +19,9 @@ class SocketController {
 			throw new Error("Invalid request data");
 		}
 
-		const messageTask = messageModel.findOne({ id: messageId, conversationId });
+
 		const conversationTask = Conversation.findOne({ id: conversationId });
+		const messageTask = messageModel.findOne({ id: messageId, conversationId });
 		const [message, conversation] = await Promise.all([messageTask, conversationTask]);
 		if (!message) {
 			throw new Error("Message not found");
@@ -29,9 +31,12 @@ class SocketController {
 		}
 
 		const isOwner = message.senderId === user.id;
-
+		let isAdmin = false;
+		if (conversation.type === "group") {
+			isAdmin = conversation.participantInfo.some(p => p.id === user.id && p.role === typeRoleUser.ADMIN);
+		}
 		if (forEveryone) {
-			if (!isOwner) {
+			if (!(isOwner || isAdmin)) {
 				throw new Error("Only sender can delete for everyone");
 			}
 
@@ -45,7 +50,7 @@ class SocketController {
 			);
 			participants.forEach((participant) => {
 				MemoryManager.getSocketList(participant).forEach((socketId) => {
-					io.to(socketId).emit("message:new", message);
+					io.to(socketId).emit("message:deleted_for_everyone", message);
 				});
 			});
 
