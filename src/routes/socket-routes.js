@@ -225,6 +225,13 @@ const socketWebRTC = (io) => {
 			socket.to(roomId).emit("user-joined", socket.id);
 		});
 
+		socket.on("screen:share-start", (data) => {
+			const roomId = socket?.user?.roomId;
+			if (!roomId) return;
+
+			socket.to(roomId).emit("screen:share-start", data);
+		});
+
 		// Gửi tín hiệu WebRTC
 		socket.on("signal", ({ to, type, data }) => {
 			const roomId = socket?.user?.roomId;

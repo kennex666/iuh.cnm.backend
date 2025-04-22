@@ -72,5 +72,26 @@ class SocketHandler {
 		});
    }
 
+   // 🔹 Catch screen sharing
+   screenShare () {
+        this.socket.on("screen:share-start", data => {
+            const { from, trackId } = data;
+            const trackElement = document.querySelector(`[data-track-id="${trackId}"]`);
+            if (trackElement) {
+                const screenVideo = trackElement.cloneNode(true);
+                screenVideo.dataset.type = "screen";
+                screenVideo.id = `video-${from}`;
+                screenVideo.querySelector("video").srcObject = windowEventHandler.localStream;
+                screenVideo.querySelector("video").play();
+                windowEventHandler.groupVideo.appendChild(screenVideo);
+            } else {
+                console.warn("❌ No screen video track");
+            }
+        });
+
+        this.socket.on("screen:share-stop", data => {
+        });
+   }
+
 
 }

@@ -1,5 +1,5 @@
 class WebRTCHandler {
-    socket = null; // socket.io client
+	socket = null; // socket.io client
 	iceServers = [
 		{
 			url: "stun:global.stun.twilio.com:3478",
@@ -9,15 +9,33 @@ class WebRTCHandler {
 
 	constructor() {}
 
-    setSocket(socket) {
-        this.socket = socket;
-    }
+	setSocket(socket) {
+		this.socket = socket;
+	}
+
+	async sendTrackToAllPeers(track, stream, type = "camera") {
+		for (const id in windowEventHandler.peers) {
+			const pc = windowEventHandler.peers[id];
+
+			const sender = pc.addTrack(track, stream);
+			sender._customType = type;
+
+			const offer = await pc.createOffer();
+			await pc.setLocalDescription(offer);
+
+			this.socket.emit("signal", {
+				to: id,
+				type: "offer",
+				data: offer,
+			});
+		}
+	}
 
 	// Tạo kết nối peer
 	createPeerConnection(socketId) {
 		const pc = new RTCPeerConnection({ iceServers: this.iceServers });
 
-        const localStream = windowEventHandler.localStream;
+		const localStream = windowEventHandler.localStream;
 		// 🔸 Add local media
 		localStream.getTracks().forEach((track) => {
 			pc.addTrack(track, localStream);
@@ -25,25 +43,57 @@ class WebRTCHandler {
 
 		// 🔸 Khi nhận media từ người khác
 		pc.ontrack = (event) => {
-			let remoteVideo = document.getElementById(`video-${socketId}`);
-			if (!remoteVideo) {
-				remoteVideo = document.createElement("video");
-				remoteVideo.id = `video-${socketId}`;
-				remoteVideo.autoplay = true;
-				remoteVideo.playsInline = true;
-				remoteVideo.className =
-					"bg-black w-full aspect-video rounded-xl shadow-lg ring-2 ring-white object-cover transition-all duration-300 scale-95 opacity-0";
-				windowEventHandler.groupVideo.appendChild(
-					remoteVideo
-				);
-				requestAnimationFrame(() => {
-					remoteVideo.classList.remove("scale-95", "opacity-0");
-				});
+			const incomingTrack = event.track;
+			const trackId = incomingTrack.id;
+
+			// ⛔ Nếu không phải video, bỏ qua
+			if (incomingTrack.kind !== "video") {
+				console.warn("❌ No camera/screen video track");
+				return;
 			}
-			if (event.streams && event.streams[0]) {
-				remoteVideo.srcObject = event.streams[0];
-			}
+
+			// ⛔ Nếu đã tồn tại trackId rồi → không render nữa
+			if (document.querySelector(`[data-track-id="${trackId}"]`)) return;
+
+			// ✅ Tạo stream riêng biệt
+			const incomingStream = new MediaStream([incomingTrack]);
+
+			// ✅ Render UI
+			const div = document.createElement("div");
+			div.dataset.trackId = trackId;
+			div.dataset.type = "camera";
+			div.setAttribute("data-socket-id", socketId);
+			div.className =
+				"relative aspect-video bg-black rounded-xl overflow-hidden ring-1 ring-white";
+
+			const video = document.createElement("video");
+			video.autoplay = true;
+			video.playsInline = true;
+			video.srcObject = incomingStream;
+			video.className = "w-full h-full object-cover rounded-xl";
+
+			// ✅ Info người dùng
+			const divUser = document.createElement("div");
+			divUser.className =
+				"absolute bottom-2 left-2 flex items-center space-x-2 bg-black/60 px-3 py-1 rounded-full text-white text-sm backdrop-blur-md";
+
+			const img = document.createElement("img");
+			img.src = "https://placehold.co/40x40";
+			img.className = "w-6 h-6 rounded-full border border-white";
+
+			const span = document.createElement("span");
+			span.className = "font-medium";
+			span.textContent = socketId;
+
+			divUser.appendChild(img);
+			divUser.appendChild(span);
+			div.appendChild(video);
+			div.appendChild(divUser);
+			windowEventHandler.groupVideo.appendChild(div);
+
+			windowEventHandler.updateGridVideo();
 		};
+
 
 		// 🔸 Khi có ICE Candidate
 		pc.onicecandidate = (event) => {
@@ -82,6 +132,4 @@ class WebRTCHandler {
 			if (data) await pc.addIceCandidate(new RTCIceCandidate(data));
 		}
 	}
-
-	
 }

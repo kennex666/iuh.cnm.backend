@@ -18,25 +18,40 @@
         border-radius: 8px;
         z-index: 10;
         } */
+         video.pinned {
+          transition: all 0.3s ease;
+          object-fit: contain;
+        }
 		</style>
 		<script src="https://cdn.tailwindcss.com/"></script>
 	</head>
-	<body class="bg-gray-900 min-h-screen flex flex-col max-h-screen">
-	<!-- PHẦN VIDEO -->
-	<div class="flex-1 flex items-center justify-center overflow-y-auto">
-		<div
-			id="group-video"
-			class="grid gap-4"
-		>
-			<video
-				id="localVideo"
-				class="bg-black w-full aspect-video rounded-xl shadow-lg ring-1 ring-white object-cover transition-all duration-300 ease-in-out"
-				autoplay
-				playsinline
-				muted
-			></video>
+	<body class="bg-gray-900 min-h-screen flex flex-col max-h-screen ">
+		<!-- Wrapper -->
+		<div class="flex-1 flex p-4 items-center justify-center">
+			<div id="group-video" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+				<!-- Người 1 -->
+				<div class="relative aspect-video bg-black rounded-xl overflow-hidden ring-1 ring-white">
+					<video
+            id="localVideo"
+						autoplay
+						playsinline
+						muted
+						class="w-full h-full object-cover rounded-xl"
+					></video>
+
+					<div class="absolute bottom-2 left-2 flex items-center space-x-2 bg-black/60 px-3 py-1 rounded-full text-white text-sm backdrop-blur-md">
+						<img src="https://placehold.co/40x40" class="w-6 h-6 rounded-full border border-white" />
+						<span class="font-medium">Dương Thái Bảo</span>
+						<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 24 24">
+							<path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3Z" />
+							<path d="M19 11a7 7 0 0 1-14 0h2a5 5 0 1 0 10 0h2Z" />
+						</svg>
+					</div>
+				</div>
+				
+			</div>
 		</div>
-	</div>
+
 
 	<!-- PHẦN NÚT ĐIỀU KHIỂN -->
 	<div class="bg-gray-800 p-4">

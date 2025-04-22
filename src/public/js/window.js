@@ -8,6 +8,7 @@ class EventHandler {
 	localVideo = null;
 	groupVideo = null;
 	user = null;
+	isPinned = false; // Biến để kiểm tra video có đang được ghim hay không
 
 	constructor(roomId, userId, conversationId, messageId) {
 		this.socket = io("/webrtc");
@@ -48,14 +49,19 @@ class EventHandler {
 		const videos = this.groupVideo.querySelectorAll("video");
 		const numVideos = videos.length;
 
-		if (numVideos > 0) {
-			this.groupVideo.style.gridTemplateColumns = `repeat(${Math.min(
-				numVideos,
-				6
-			)}, 1fr)`;
-			this.groupVideo.style.gridTemplateRows = `repeat(${Math.ceil(
-				numVideos / 6
-			)}, 1fr)`;
+		for (let i = 0; i < numVideos; i++) {
+			const video = videos[i];
+		}
+
+        if (numVideos == 1) {
+            videos[0].style.maxHeight = "70vh";
+        }
+		if (numVideos > 0 && !this.isPinned) {
+			const cols = Math.min(numVideos, 3); // tối đa 3 cột cho đẹp
+			this.groupVideo.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
+
+			// auto rows tùy theo tổng số
+			this.groupVideo.style.gridAutoRows = "minmax(0, 1fr)";
 		}
 	}
 
@@ -99,7 +105,7 @@ class EventHandler {
 		try {
 			this.screenStream = await navigator.mediaDevices.getDisplayMedia({
 				video: true,
-				audio: false, // Nếu muốn share âm thanh thì true
+				audio: true, // Nếu muốn share âm thanh thì true
 			});
 
 			// Tạo thẻ video
@@ -122,8 +128,18 @@ class EventHandler {
 			// Cập nhật lại layout
 			this.updateGridVideo();
 
+            // Gửi stream đến các peer
+            const screenTrack = this.screenStream.getVideoTracks()[0];
+
+            webrtc.sendTrackToAllPeers(screenTrack, this.screenStream, "screen");
+            
+
+            this.socket.emit("screen:share-start", {
+				from: windowEventHandler.myId,
+				trackId: screenTrack.id,
+			});
 			// Xử lý khi người dùng dừng chia sẻ
-			this.screenStream.getVideoTracks()[0].onended = () => {
+			this.screenStream.getVideoTracks()[0].onended = async () => {
 				this.stopScreenShare();
 			};
 		} catch (err) {
@@ -132,6 +148,7 @@ class EventHandler {
 	}
 
 	stopScreenShare() {
+        
 		if (this.screenStream) {
 			this.screenStream.getTracks().forEach((track) => track.stop());
 			this.screenStream = null;
@@ -141,5 +158,20 @@ class EventHandler {
 			this.screenVideo = null;
 		}
 		this.updateGridVideo();
+	}
+
+	layout(name) {
+		switch (name) {
+			case "PINNED":
+				this.groupVideo.classList =
+					"grid grid-cols-1 grid-rows-1 gap-4";
+				this.groupVideo.style = "";
+				break;
+			case "NORMAL":
+				this.groupVideo.classList = "grid gap-4";
+				break;
+			default:
+				break;
+		}
 	}
 }
