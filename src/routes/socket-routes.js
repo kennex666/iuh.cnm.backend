@@ -168,11 +168,10 @@ const socketRoutes = (io) => {
 
 		socket.on("friend_request:send_accept", (data) => {
 			console.log("send_accept_friend_request:", data);
-			const { senderId } = data;
+			const { senderId, receiverId } = data;
 			if (senderId !== socket.user.id) {
 				return;
 			}
-			const { receiverId } = data;
 			const socketList = MemoryManager.getSocketList(receiverId);
 			socketList.forEach((socketId) => {
 				io.to(socketId).emit("friend_request:new_accept", data);
