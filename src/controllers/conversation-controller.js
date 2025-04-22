@@ -66,11 +66,14 @@ const createConversationController = async (req, res) => {
             settings
         });
 
+        const conversationObject = newConversation.toObject();
+
+
         if (!newConversation) {
             throw new AppError("Failed to create conversation", 400);
         }
 
-        responseFormat(res, newConversation, "Create conversation successful", true, 200);
+        responseFormat(res, conversationObject, "Create conversation successful", true, 200);
     } catch (error) {
         handleError(error, res, "Create conversation failed");
     }
