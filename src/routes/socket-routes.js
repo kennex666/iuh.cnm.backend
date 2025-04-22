@@ -234,6 +234,10 @@ const socketRoutes = (io) => {
 		socket.on("vote:get", async (data) => {
 			await SocketController.handleGetVote(io, socket, data);
 		});
+
+		socket.on("message:pin", async (data) => {
+			await SocketController.handlePinMessage(io, socket, data);
+		});
 	});
 };
 

@@ -12,6 +12,7 @@ const {getAllConversationsController, getConversationByIdController,
 	deleteConversationController,addParticipantsController, removeParticipantsController, 
 	transferAdminController, grantModController,
 	updateAllowMessagingCotroller,pinMessageController} = require("../controllers/conversation-controller");
+const { pinMessage } = require('../services/conversation-service');
 
 
 class SocketController {
@@ -493,6 +494,87 @@ class SocketController {
 			});
 		}
 	}
+
+	static async handlePinMessage(io, socket, data) {
+		try {
+			const { conversationId, messageId } = data;
+	
+			// Kiểm tra dữ liệu đầu vào
+			if (!conversationId || !messageId) {
+				return socket.emit("message:error", {
+					message: "Invalid data for pinning message",
+				});
+			}
+	
+			// Lấy thông tin cuộc trò chuyện
+			const conversation = await Conversation.findOne({ id: conversationId });
+			if (!conversation) {
+				return socket.emit("message:error", {
+					message: "Conversation not found",
+				});
+			}
+	
+			// Kiểm tra xem tin nhắn đã tồn tại trong danh sách ghim chưa
+			const isPinned = conversation.pinMessages.some((msg) => msg.id === messageId);
+			if (isPinned) {
+				console.log("Message is already pinned:", messageId);
+				return socket.emit("message:error", {
+					message: "Message is already pinned",
+				});
+			}
+	
+			// Lấy thông tin tin nhắn
+			const message = await messageModel.findOne({ id: messageId });
+			if (!message) {
+				return socket.emit("message:error", {
+					message: "Message not found",
+				});
+			}
+	
+			// Xóa tin nhắn đầu tiên nếu danh sách ghim đã đạt giới hạn 3 tin nhắn
+			if (conversation.pinMessages.length >= 3) {
+				conversation.pinMessages.shift();
+			}
+	
+			// Thêm tin nhắn mới vào danh sách ghim
+			conversation.pinMessages.push({
+				id: message.id,
+				conversationId: message.conversationId,
+				senderId: message.senderId,
+				content: message.content,
+				type: message.type,
+				repliedTold: message.repliedTold,
+				sentAt: message.sentAt,
+				readBy: message.readBy,
+			});
+	
+			// Lưu lại cuộc trò chuyện
+			await conversation.save();
+	
+			// Gửi thông báo đến tất cả các thành viên trong cuộc trò chuyện
+			const participants = conversation.participantInfo.map((p) => p.id);
+			participants.forEach((participantId) => {
+				const sockets = MemoryManager.getSocketList(participantId);
+				sockets.forEach((socketId) => {
+					io.to(socketId).emit("message:pinned", {
+						conversationId,
+						pinnedMessages: conversation.pinMessages,
+					});
+				});
+			});
+	
+			// Xác nhận cho người gửi
+			socket.emit("message:pinned:success", {
+				message: "Message pinned successfully",
+			});
+		} catch (error) {
+			console.error("Error pinning message:", error);
+			socket.emit("message:error", {
+				message: error.message || "Failed to pin message",
+			});
+		}
+	}
+	
 }
 
 module.exports = SocketController;

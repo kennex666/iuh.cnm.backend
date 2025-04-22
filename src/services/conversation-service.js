@@ -267,7 +267,9 @@ const pinMessage = async (conversationId, messageId) => {
 
     // Ghim tin nhắn
     if (conversations.pinMessages.length >= 3) {
-        conversations.pinMessages.shift(); // Xóa tin nhắn đầu tiên nếu đã có 3 tin nhắn ghim
+        // Xóa tin nhắn đầu tiên nếu đã có 3 tin nhắn ghim
+        conversations.pinMessages.shift();
+
     }
     conversations.pinMessages.push({
         id: message.id,
