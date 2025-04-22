@@ -1,7 +1,7 @@
 const { error } = require('console');
 const {getAllConversations, getConversationById, createConversation, updateConversation, 
     deleteConversation, addParticipants, removeParticipants, transferAdminRole,
-    grantModRole,updateAllowMessaging} = require('../services/conversation-service');
+    grantModRole,updateAllowMessaging, pinMessage} = require('../services/conversation-service');
 const {AppError,handleError,responseFormat } = require("../utils/response-format");
 const userService = require('../services/user-service');
 const { updateSearchIndex } = require('../models/conversation-model');
@@ -231,6 +231,24 @@ const updateAllowMessagingCotroller = async (req, res) => {
     }
 };
 
+// Pin message in conversation
+const pinMessageController = async (req, res) => {
+    try {
+        const conversationId = req.params.id;
+        const { messageId } = req.body;
+
+        if (!conversationId || !messageId) {
+            throw new AppError('Missing conversationId or messageId', 400);
+        }
+
+        const updatedConversation = await pinMessage(conversationId, messageId);
+
+        responseFormat(res, updatedConversation, 'Pinned message successfully', true, 200);
+    } catch (error) {
+        handleError(error, res, 'Pin message failed');
+    }
+};
+
 
 
 module.exports = {
@@ -243,5 +261,6 @@ module.exports = {
     removeParticipantsController,
     transferAdminController,
     grantModController,
-    updateAllowMessagingCotroller
+    updateAllowMessagingCotroller,
+    pinMessageController
 };

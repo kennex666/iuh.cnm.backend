@@ -2,7 +2,8 @@ const express = require("express");
 const {getAllConversationsController, getConversationByIdController, 
     createConversationController, updateConversationController, 
     deleteConversationController,addParticipantsController, removeParticipantsController, 
-    transferAdminController, grantModController,updateAllowMessagingCotroller} = require("../controllers/conversation-controller");
+    transferAdminController, grantModController,updateAllowMessagingCotroller,
+    pinMessageController} = require("../controllers/conversation-controller");
 const {authMiddleware} = require("../middlewares/auth");
 const conversationRoute = express.Router();
 
@@ -28,6 +29,8 @@ conversationRoute.put("/transfer-admin/:id", transferAdminController);
 conversationRoute.put("/grant-mod-role/:id", grantModController);
 //update allow messaging (Nhắn vào là đổi trạng thái từ fasle thành true và ngược lại)
 conversationRoute.put("/update-allow-messaging/:id", updateAllowMessagingCotroller);
+//pin message
+conversationRoute.put("/pin-message/:id", pinMessageController);
 
 
 module.exports = conversationRoute;
