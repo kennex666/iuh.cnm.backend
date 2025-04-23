@@ -40,10 +40,21 @@ class SocketController {
 			(participant) => participant.id === userId && participant.role === typeRoleUser.ADMIN
 		);
 
-		if (isAdmin) {
+		if (isAdmin && conversation.participantIds.length > 1) {
 			// Nếu là admin, yêu cầu bầu admin mới trước khi rời
 			return socket.emit("group:admin_required", {
 				message: "Bạn là admin. Vui lòng bầu người khác làm admin trước khi rời nhóm.", status: false
+			});
+		}
+
+		// Nếu nhóm không còn thành viên, xóa nhóm
+		if (isAdmin && updatedConversation.participantIds.length <= 1) {
+			await Conversation.findByIdAndDelete(groupId);
+			console.log(`Nhóm ${groupId} đã bị xóa vì không còn thành viên`);
+			return socket.emit("group:leave_success", {
+				message: "Nhóm đã giải tán",
+				groupId,
+				status: true
 			});
 		}
 		// Xóa user khỏi participantIds và participantInfo
@@ -76,12 +87,6 @@ class SocketController {
 			groupId,
 			status: true
 		});
-
-		// Nếu nhóm không còn thành viên, xóa nhóm
-		if (updatedConversation.participantIds.length === 0) {
-			await Conversation.findByIdAndDelete(groupId);
-			console.log(`Nhóm ${groupId} đã bị xóa vì không còn thành viên`);
-		}
 	}
 	static async handleDenyingFriendRequest(io, socket, data) {
 		const { senderId, receiverId } = data;
