@@ -9,17 +9,20 @@ class EventHandler {
 	groupVideo = null;
 	user = null;
 	isPinned = false; // Biến để kiểm tra video có đang được ghim hay không
+	typeCall = null; // Biến để kiểm tra loại cuộc gọi (video/audio)
 
-	constructor(roomId, userId, conversationId, messageId) {
+	constructor(roomId, userId, conversationId, messageId, typeCall) {
 		this.socket = io("/webrtc");
 		this.groupVideo = document.getElementById("group-video");
 		this.localVideo = document.getElementById("localVideo");
 		this.myId = this.socket.id;
+		this.typeCall = typeCall;
 		this.user = {
 			roomId: roomId,
 			userId,
 			conversationId,
 			callId: messageId,
+			typeCall: typeCall,
 		};
 		this.connectHandler();
 	}
@@ -69,10 +72,11 @@ class EventHandler {
 	hangUp() {
 		console.log("👋 Leaving room");
 		this.socket.emit("leave-room", {
-			roomId: ROOM_ID,
-			userId,
-			conversationId,
-			callId: messageId,
+			roomId: this.user.roomId,
+			userId: this.user.userId,
+			conversationId: this.user.conversationId,
+			callId: this.user.callId,
+			typeCall: this.typeCall,
 		});
 
 		Object.keys(peers).forEach((id) => {
@@ -83,8 +87,7 @@ class EventHandler {
 		this.localStream?.getTracks().forEach((track) => track.stop());
 		this.localVideo.srcObject = null;
 		this.socket.disconnect();
-
-		window.location.href = "http://localhost:8081/";
+		window.location.href = "/";
 	}
 
 	// 🔹 Bật/tắt cam
