@@ -9,6 +9,7 @@ const { socketRoutes, initSocket, socketWebRTC } = require("./routes/socket-rout
 const webrtcRoutes = require("./routes/webrtc-route");
 const express = require("express");
 const path = require("path");
+const testRoutes = require("./routes/test-routes");
 
 (async () => {
 	try {
@@ -27,6 +28,7 @@ const path = require("path");
 
 		app.use(corsMiddleware);
 		app.use("/webrtc", webrtcRoutes);
+		app.use("/test", testRoutes);
 		app.use("/api", router);
 		server.listen(PORT, HOST, () => {
 			console.log(`Server is listening on port ${PORT}`);

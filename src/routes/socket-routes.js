@@ -28,7 +28,19 @@ function initSocket(server, callback) {
 		},
 		maxHttpBufferSize: 10 * 1024 * 1024,
 	});
+	io = new Server(server, {
+		path: "/socket.io",
+		cors: {
+			origin: "*",
+			methods: ["GET", "POST"],
+			allowedHeaders: ["Content-Type", "Authorization"],
+			credentials: true,
+		},
+		maxHttpBufferSize: 10 * 1024 * 1024,
+	});
 
+	callback(io);
+	console.log("Socket.io initialized");
 	callback(io);
 	console.log("Socket.io initialized");
 }
@@ -38,15 +50,19 @@ function getIO() {
 		throw new Error("❌ Socket.io chưa được khởi tạo");
 	}
 	return io;
+	if (!io) {
+		throw new Error("❌ Socket.io chưa được khởi tạo");
+	}
+	return io;
 }
 
-const users = new Map();
-
 const socketRoutes = (io) => {
+	io.use(authSocketMiddleware);
 	io.use(authSocketMiddleware);
 
 	io.on("connection", (socket) => {
 		console.log(`✅ New client connected: ${socket.id}`);
+
 
 		// Add to list user
 		MemoryManager.addSocketToUser(socket.user.id, socket.id);
@@ -131,7 +147,6 @@ const socketRoutes = (io) => {
 				socket.emit("group:error", { message: error.message });
 			}
 		});
-
 
 		// Event loginQR:generate
 		socket.on("loginQR:generate", () => {
@@ -271,63 +286,93 @@ const socketRoutes = (io) => {
 			await SocketController.handleDeleteConversation(io, socket, data);
 		});
 	});
-};
+}
 
 const socketWebRTC = (io) => {
 	const rooms = {}; // { roomId: Set(socket.id, ...) }
+	const pendingSockets = new Map(); // socketId -> timeout
 	const webRTC = io.of("/webrtc");
 
 	webRTC.on("connection", (socket) => {
 		console.log("👤 New connection:", socket.id);
 
-		// Join room
-		socket.on("join-room", (roomId) => {
-			socket.roomId = roomId; // Lưu roomId vào socket để sử dụng sau này
+		// Tham gia phòng
+		socket.on("join-room", ({ roomId, userId, conversationId, callId }) => {
+			socket.user = { id: userId, conversationId, callId, roomId };
 			socket.join(roomId);
-			if (!rooms[roomId]) {
-				rooms[roomId] = new Set();
-			}
+
+			if (!rooms[roomId]) rooms[roomId] = new Set();
 			rooms[roomId].add(socket.id);
 
 			console.log(`📦 ${socket.id} joined room ${roomId}`);
 			console.log(`👥 Room ${roomId} has:`, [...rooms[roomId]]);
 
-			// Gửi danh sách user hiện tại cho client vừa vào
 			socket.emit("room-users", [...rooms[roomId]]);
-
-			// Gửi thông báo cho các peer trong phòng (trừ chính mình)
 			socket.to(roomId).emit("user-joined", socket.id);
 		});
 
-		// Gửi signal từ A → B (1-1)
-		socket.on("signal", ({ targetId, data }) => {
-			console.log(`📡 ${socket.id} sent signal to ${targetId}:`, data);
-			io.of("/webrtc").to(targetId).emit("signal", {
+		socket.on("screen:share-start", (data) => {
+			const roomId = socket?.user?.roomId;
+			if (!roomId) return;
+
+			socket.to(roomId).emit("screen:share-start", data);
+		});
+
+		// Gửi tín hiệu WebRTC
+		socket.on("signal", ({ to, type, data }) => {
+			const roomId = socket?.user?.roomId;
+			if (!roomId) return;
+
+			webRTC.to(to).emit("signal", {
 				from: socket.id,
+				type,
 				data,
 			});
 		});
 
-		// Rời phòng
+		// Ngắt kết nối tạm thời
 		socket.on("disconnecting", () => {
-			const roomId = socket.roomId;
-			if (!roomId) return;
+			const roomId = socket?.user?.roomId;
+			if (!roomId || !rooms[roomId]) return;
 
-			const conversationID = roomId.split("_")[0];
-			const messageId = roomId.split("_")[2];
-
-			if (rooms[roomId]) {
+			const timeout = setTimeout(() => {
 				rooms[roomId].delete(socket.id);
-				socket.to(roomId).emit("user-left", socket.id);
+				webRTC.to(roomId).emit("user-left", {
+					socketId: socket.id,
+					reason: "timeout",
+				});
+				if (rooms[roomId].size === 0) delete rooms[roomId];
+				pendingSockets.delete(socket.id);
+			}, 10000); // giữ 10 giây để chờ reconnect
 
-				if (rooms[roomId].size === 0) {
-					delete rooms[roomId]; // xoá room nếu rỗng
-				}
+			pendingSockets.set(socket.id, timeout);
+		});
 
-				exitRoom(conversationID, 1); // 👈 gọi hàm cleanup riêng của em
+		// Thoát chủ động
+		socket.on("leave-room", () => {
+			const roomId = socket?.user?.roomId;
+			if (!roomId || !rooms[roomId]) return;
+
+			rooms[roomId].delete(socket.id);
+			webRTC.to(roomId).emit("user-left", {
+				socketId: socket.id,
+				reason: "leave",
+			});
+
+			if (rooms[roomId].size === 0) delete rooms[roomId];
+		});
+
+		// Reconnect kịp thời
+		socket.on("reconnect", () => {
+			const timeout = pendingSockets.get(socket.id);
+			if (timeout) {
+				clearTimeout(timeout);
+				pendingSockets.delete(socket.id);
+				console.log(`✅ ${socket.id} đã reconnect đúng lúc`);
 			}
 		});
 
+		// Ngắt hoàn toàn
 		socket.on("disconnect", () => {
 			console.log("❌ Disconnected:", socket.id);
 		});
@@ -371,7 +416,7 @@ const exitRoom = async (conversationId, userId) => {
 
 	const dataMessage = {
 		conversationId: conversationId,
-		senderId: conversation.participantIds[0],
+		senderId: conversation.participants[0],
 		type: "call",
 		content: "end",
 		readBy: userId,
@@ -380,7 +425,7 @@ const exitRoom = async (conversationId, userId) => {
 	const message = await messageModel.create(dataMessage);
 	conversation.lastMessage = message._id;
 	await conversation.save();
-	sendMessage(getIO(), conversation.participantIds, message);
+	sendMessage(getIO(), conversation.participants, message);
 	return {
 		errorCode: 200,
 		errorMessage: "Cuộc gọi đã kết thúc",

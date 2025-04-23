@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <meta charset="UTF-8">
-  <title>WebRTC Web Client</title>
-  <style>
-        /* #localVideo {
+	<head>
+		<meta charset="UTF-8" />
+    <!-- responsive -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>WebRTC Web Client</title>
+		<style>
+			/* #localVideo {
         position: absolute;
         bottom: 10px;
         right: 10px;
@@ -16,167 +18,76 @@
         border-radius: 8px;
         z-index: 10;
         } */
-  </style>
-  <script src="https://cdn.tailwindcss.com/"></script>
-</head>
-<body class="bg-gray-900">
-    <div class="flex flex-row items-center justify-center"  style="min-height: 100vh;">
-        <div class="grid grid-cols-2 gap-6 w-full px-12" >
-            <video id="remoteVideo" class="bg-black w-full" autoplay playsinline> </video>
-            <video id="localVideo" class="bg-black w-full" autoplay playsinline muted></video>
-        </div>
-    </div>
-    <div class="fixed bottom-0 left-0 right-0 bg-gray-800 p-4">
-        <div class="flex flex-row items-center justify-center mt-4">
-            <button class="bg-blue-500 text-white px-4 py-2 rounded">Tắt cam</button>
-            <button class="bg-green-500 text-white px-4 py-2 rounded ml-4">Tắt tiếng</button>
-            <button onclick="hangUp()" class="bg-red-500 text-white px-4 py-2 rounded ml-4">Rời phòng</button>
-        </div>
-    </div>
+         video.pinned {
+          transition: all 0.3s ease;
+          object-fit: contain;
+        }
+		</style>
+		<script src="https://cdn.tailwindcss.com/"></script>
+	</head>
+	<body class="bg-gray-900 min-h-screen flex flex-col max-h-screen ">
+		<!-- Wrapper -->
+		<div class="flex-1 flex p-4 items-center justify-center">
+			<div id="group-video" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+				<!-- Người 1 -->
+				<div class="relative aspect-video bg-black rounded-xl overflow-hidden ring-1 ring-white">
+					<video
+            id="localVideo"
+						autoplay
+						playsinline
+						muted
+						class="w-full h-full object-cover rounded-xl"
+					></video>
 
-  <script src="/socket.io/socket.io.js"></script>
-  <script>
-    const urlParts = window.location.pathname.split('/');
-
-    const conversationId = urlParts[3];
-    const userId = urlParts[4];
-    const messageId = urlParts[5];
-
-    console.log("conversationId:", conversationId);
-    console.log("userId:", userId);
-    console.log("messageId:", messageId);
-
-    const ROOM_ID = conversationId + "_room_" + messageId;
-    const socket = io("/webrtc");
-    let myId = null;
-    let peerId = null;
-    const pc = new RTCPeerConnection({
-      iceServers: [
-        { urls: "stun:stun.l.google.com:19302" },
-        { urls: "stun:stun1.l.google.com:19302" },
-        { urls: "stun:stun.stunprotocol.org:3478" },
-        // openrelay.metered.ca:80	
-        // openrelay.metered.ca:443
-        { urls: "turn:openrelay.metered.ca:80", username: "openrelayproject", credential: "openrelayproject" },
-        { urls: "turn:openrelay.metered.ca:443", username: "openrelayproject", credential: "openrelayproject" }
-      ]
-    });
-pc.oniceconnectionstatechange = () => {
-	console.log("📶 ICE connection state:", pc.iceConnectionState);
-};
-
-pc.onicecandidate = (event) => {
-	if (event.candidate) {
-		console.log("📡 Candidate:", event.candidate.candidate);
-	}
-};
+					<div class="absolute bottom-2 left-2 flex items-center space-x-2 bg-black/60 px-3 py-1 rounded-full text-white text-sm backdrop-blur-md">
+						<img src="https://placehold.co/40x40" class="w-6 h-6 rounded-full border border-white" />
+						<span class="font-medium">Dương Thái Bảo</span>
+						<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 24 24">
+							<path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3Z" />
+							<path d="M19 11a7 7 0 0 1-14 0h2a5 5 0 1 0 10 0h2Z" />
+						</svg>
+					</div>
+				</div>
+				
+			</div>
+		</div>
 
 
-    const localVideo = document.getElementById('localVideo');
-    const remoteVideo = document.getElementById('remoteVideo');
+	<!-- PHẦN NÚT ĐIỀU KHIỂN -->
+	<div class="bg-gray-800 p-4">
+		<div class="flex flex-row items-center justify-center space-x-4">
+			<button
+				onclick="windowEventHandler.toggleCamera(this)"
+				class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition"
+			>
+				Tắt cam
+			</button>
+			<button
+				onclick="windowEventHandler.toggleMute(this)"
+				class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded transition"
+			>
+				Tắt tiếng
+			</button>
+			<button
+				onclick="windowEventHandler.startScreenShare(this)"
+				class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded transition"
+			>
+			  Chia sẻ màn hình
+			</button>
+			<button
+				onclick="windowEventHandler.hangUp(this)"
+				class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded transition"
+			>
+				Rời phòng
+			</button>
+		</div>
+	</div>
 
-    // Handle ICE
-    pc.onicecandidate = (event) => {
-      if (event.candidate && peerId) {
-        socket.emit('signal', {
-          targetId: peerId,
-          data: { type: 'candidate', candidate: event.candidate }
-        });
-      }
-    };
+	<script src="/socket.io/socket.io.js"></script>
+  <script src="/js/socket.js"></script>
+  <script src="/js/webrtc.js"></script>
+  <script src="/js/window.js"></script>
+  <script src="/js/main.js"></script>
 
-    // Handle remote stream
-    pc.ontrack = (event) => {
-      remoteVideo.srcObject = event.streams[0];
-    };
-
-    // Start camera
-    async function startLocalStream() {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      stream.getTracks().forEach(track => pc.addTrack(track, stream));
-      localVideo.srcObject = stream;
-      return stream;
-    }
-
-    // Join room
-    socket.on('connect', async () => {
-      myId = socket.id;
-      console.log('🔗 Connected with ID:', myId);
-      await startLocalStream();
-      socket.emit('join-room', ROOM_ID);
-    });
-
-    // Có người trong phòng → chủ động gửi offer
-    socket.on('room-users', async (users) => {
-      if (users.length > 1) {
-        peerId = users[0];
-        console.log('📞 Calling to:', peerId);
-
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
-        socket.emit('signal', {
-          targetId: peerId,
-          data: { type: 'offer', sdp: offer }
-        });
-      } 
-    });
-
-    // Reconnect
-    socket.on('disconnect', () => {
-      console.warn("⚠️ Mất kết nối socket");
-      alert("Người dùng đã rời khỏi phòng");
-      location.reload();
-    });
-
-    // Có người mới vào → lưu peerId nếu chưa có
-    socket.on('user-joined', (newId) => {
-      if (!peerId && newId !== myId) {
-        peerId = newId;
-        console.log('👋 User joined:', newId);
-      }
-    });
-
-    // Nhận tín hiệu từ peer
-    socket.on('signal', async ({ from, data }) => {
-      console.log('📡 Signal from:', from, data);
-      peerId = from;
-      if (data.type === 'offer') {
-        await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
-        const answer = await pc.createAnswer();
-        await pc.setLocalDescription(answer);
-        socket.emit('signal', {
-          targetId: from,
-          data: { type: 'answer', sdp: answer }
-        });
-      } else if (data.type === 'answer') {
-        await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
-      } else if (data.type === 'candidate') {
-        await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
-      }
-    });
-
-    socket.on('user-left', (id) => {
-      console.warn('❌ User left:', id);
-      if (id === peerId) {
-        
-        remoteVideo.srcObject = null;
-        peerId = null;
-      }
-      // close
-        hangUp();
-    });
-
-  function hangUp() {
-    if (pc) {
-      pc.getSenders().forEach(sender => pc.removeTrack(sender));
-      pc.close();
-    }
-    remoteVideo.srcObject = null;
-    localVideo.srcObject?.getTracks().forEach(track => track.stop());
-    socket.disconnect();
-    window.location.href = "http://localhost:8081/"; // hoặc redirect về đâu đó
-  }
-
-  </script>
-</body>
+	</body>
 </html>

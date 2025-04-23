@@ -26,6 +26,7 @@ const { createFriendRequest } = require('../services/friendrequest-service');
 const typeRequest = require('../models/type-request');
 const UserModel = require('../models/user-model');
 
+
 class SocketController {
 	static async handleUpdateNickNameInConversation(io, socket, data) {
 		const { conversationId, userId, newNickname } = data;
