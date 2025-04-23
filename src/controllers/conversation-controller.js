@@ -111,7 +111,7 @@ const createConversationController = async (req, res) => {
       type: isGroup ? "group" : "1vs1",
       participantIds,
       participantInfo,
-      url,
+      url: `https://imessify.com/conversations/${Math.random().toString(36).substring(2, 15)}`,
       pinMessages,
       settings
     });
