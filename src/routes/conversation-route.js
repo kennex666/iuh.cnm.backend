@@ -3,7 +3,7 @@ const {getAllConversationsController, getConversationByIdController,
     createConversationController, updateConversationController, 
     deleteConversationController,addParticipantsController, removeParticipantsController, 
     transferAdminController, grantModController,updateAllowMessagingCotroller,
-    pinMessageController,joinGroupByUrlController} = require("../controllers/conversation-controller");
+    pinMessageController,joinGroupByUrlController, checkUrlExistController} = require("../controllers/conversation-controller");
 const {authMiddleware} = require("../middlewares/auth");
 const conversationRoute = express.Router();
 
@@ -34,6 +34,8 @@ conversationRoute.put("/join-group-by-url", joinGroupByUrlController);
 conversationRoute.put("/:id", updateConversationController);
 //delete conversation
 conversationRoute.delete("/:id", deleteConversationController);
+//check url exist
+conversationRoute.post("/check-url-exist", checkUrlExistController);
 
 
 module.exports = conversationRoute;

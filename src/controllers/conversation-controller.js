@@ -11,7 +11,7 @@ const {
   grantModRole,
   updateAllowMessaging,
   pinMessage,
-  joinGroupByUrlService
+  joinGroupByUrlService,
 } = require("../services/conversation-service");
 const {
   AppError,
@@ -22,6 +22,7 @@ const userService = require("../services/user-service");
 const { updateSearchIndex } = require("../models/conversation-model");
 const { generateIdSnowflake } = require("../utils/id-generators");
 const conversation = require("../models/conversation-model");
+const Conversation = require("../models/conversation-model");
 const getAllConversationsController = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -397,6 +398,25 @@ const joinGroupByUrlController = async (req, res) => {
   
 };
 
+const checkUrlExistController = async (req, res) => {
+  try {
+    const { url } = req.body; // Lấy URL từ request
+    const conversations = await Conversation.findOne({ url });
+    // Gọi service để kiểm tra URL
+
+    if (!conversations) {
+      return responseFormat(res, null, "URL does not exist", false, 404);
+    }
+
+    // Trả về kết quả
+    const conversationObject = conversations.toObject();
+    responseFormat(res, conversationObject, conversations.message, true, 200);
+  } catch (error) {
+    console.error("Error in checkUrlExistController:", error);
+    handleError(error, res, "Failed to check URL existence");
+  }
+}
+
 module.exports = {
   getAllConversationsController,
   getConversationByIdController,
@@ -409,5 +429,6 @@ module.exports = {
   grantModController,
   updateAllowMessagingCotroller,
   pinMessageController,
-  joinGroupByUrlController
+  joinGroupByUrlController,
+  checkUrlExistController
 };
