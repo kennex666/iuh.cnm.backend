@@ -22,7 +22,9 @@ const {
 } = require("../controllers/conversation-controller");
 const {
   pinMessage,
-  addParticipants
+  addParticipants,
+  removeParticipants,
+  grantModRole
 } = require("../services/conversation-service");
 const userService = require("../services/user-service");
 
@@ -267,11 +269,10 @@ class SocketController {
         });
       }
 
-      const updatedConversation = await removeParticipantsController({
-        params: { id: conversationId },
-        body: { participantIds },
-        user: { id: socket.user.id }
-      });
+      const updatedConversation = await removeParticipants(
+		conversationId,
+		participantIds
+	  );
 
       // Notify all remaining participants in the conversation
       const participants = updatedConversation.participantInfo.map((p) => p.id);
@@ -335,11 +336,11 @@ class SocketController {
         });
       }
 
-      const updatedConversation = await grantModController({
-        params: { id: conversationId },
-        body: { toUserId },
-        user: { id: socket.user.id }
-      });
+	  const updatedConversation = await grantModRole(
+		conversationId,
+		socket.user.id,
+		toUserId
+	  );
 
       // Notify all participants in the conversation
       const participants = updatedConversation.participantInfo.map((p) => p.id);
@@ -451,7 +452,7 @@ class SocketController {
       }
 
       const message = await messageModel.findOne({
-        _id: voteId,
+        id: voteId,
         conversationId
       });
       if (!message) {
@@ -519,7 +520,7 @@ class SocketController {
       }
 
       const message = await messageModel.findOne({
-        _id: voteId,
+        id: voteId,
         conversationId
       });
       if (!message) {
@@ -527,6 +528,7 @@ class SocketController {
           message: "Vote not found"
         });
       }
+	  console.log("Vote message:", message);
 
       socket.emit("vote:result", {
         conversationId,
