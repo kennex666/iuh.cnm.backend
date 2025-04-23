@@ -27,6 +27,64 @@ const typeRequest = require('../models/type-request');
 const UserModel = require('../models/user-model');
 
 class SocketController {
+	static async handleUpdateNickNameInConversation(io, socket, data) {
+		const { conversationId, userId, newNickname } = data;
+
+		// Kiểm tra dữ liệu đầu vào
+		if (!conversationId || !userId) {
+			return socket.emit("conversation:error", {
+				message: "Thiếu thông tin conversationId hoặc userId",
+			});
+		}
+
+		// Tìm kiếm nhóm
+		const conversation = await Conversation.findOne({ id: conversationId });
+		if (!conversation) {
+			return socket.emit("conversation:error", {
+				message: "Nhóm không tồn tại",
+			});
+		}
+
+		// Kiểm tra xem userId có tồn tại trong nhóm không
+		const participant = conversation.participantInfo.find(
+			(p) => p.id === userId
+		);
+		if (!participant) {
+			return socket.emit("conversation:error", {
+				message: "Người dùng không phải là thành viên của nhóm",
+			});
+		}
+
+		// Kiểm tra newNickname
+		const updatedNickname = newNickname && newNickname.trim() !== ""
+			? newNickname
+			: participant.name; // Nếu rỗng, đặt lại nickname là tên user
+
+		// Cập nhật nickname
+		conversation.participantInfo = conversation.participantInfo.map((p) =>
+			p.id === userId ? { ...p, nickname: updatedNickname } : p
+		);
+		await conversation.save();
+
+		// Gửi thông báo đến tất cả các thành viên trong nhóm
+		conversation.participantIds.forEach((participantId) => {
+			MemoryManager.getSocketList(participantId).forEach((socketId) => {
+				io.to(socketId).emit("conversation:nickname_updated", {
+					conversationId,
+					userId,
+					newNickname: updatedNickname,
+				});
+			});
+		});
+
+		// Xác nhận cho client
+		socket.emit("conversation:update_nickname_success", {
+			message: "Cập nhật nickname thành công",
+			conversationId,
+			userId,
+			newNickname: updatedNickname,
+		});
+	}
 	static async handleLeaveGroup(io, socket, data) {
 		const userId = socket.user.id;
 

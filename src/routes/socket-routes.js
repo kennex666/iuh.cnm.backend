@@ -98,6 +98,19 @@ const socketRoutes = (io) => {
 				});
 			}
 		});
+
+		socket.on("conversation:update_nickname", async (data) => {
+			try {
+				console.log("data update_nickname user", data);
+				await SocketController.handleUpdateNickNameInConversation(io, socket, data);
+			} catch (error) {
+				console.error("Error updating nickname:", error.message);
+				socket.emit("conversation:error", {
+					message: error.message,
+				});
+			}
+		});
+
 		socket.on("block-user:unblock", async (data) => {
 			try {
 				console.log("data unblock user", data);
@@ -221,19 +234,19 @@ const socketRoutes = (io) => {
 		socket.on("conversation:add_participants", async (data) => {
 			await SocketController.handleAddParticipants(io, socket, data);
 		});
-	
+
 		socket.on("conversation:remove_participants", async (data) => {
 			await SocketController.handleRemoveParticipants(io, socket, data);
 		});
-	
+
 		socket.on("conversation:transfer_admin", async (data) => {
 			await SocketController.handleTransferAdmin(io, socket, data);
 		});
-	
+
 		socket.on("conversation:grant_mod", async (data) => {
 			await SocketController.handleGrantMod(io, socket, data);
 		});
-	
+
 		socket.on("conversation:update_allow_messaging", async (data) => {
 			await SocketController.handleUpdateAllowMessaging(io, socket, data);
 		});
@@ -241,11 +254,11 @@ const socketRoutes = (io) => {
 		socket.on("vote:create", async (data) => {
 			await SocketController.handleCreateVote(io, socket, data);
 		});
-	
+
 		socket.on("vote:submit", async (data) => {
 			await SocketController.handleSubmitVote(io, socket, data);
 		});
-	
+
 		socket.on("vote:get", async (data) => {
 			await SocketController.handleGetVote(io, socket, data);
 		});
