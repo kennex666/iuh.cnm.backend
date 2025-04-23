@@ -12,6 +12,9 @@ const MemoryManager = require("../utils/memory-manager");
 const { updateSeen } = require("../services/message-service");
 const { getConversationById, getConversationByCvsId } = require("../services/conversation-service");
 const { sendMessage } = require("../services/socket-emit-service");
+const FriendList = require("../models/friend-list-model");
+const Conversation = require("../models/conversation-model");
+const typeRoleUser = require("../models/type-role-user");
 let io = null;
 
 function initSocket(server, callback) {
@@ -84,26 +87,38 @@ const socketRoutes = (io) => {
 			await updateSeen(messageId, socket.user.id);
 		});
 
-		// not handled yet
-		socket.on("message:delete_message", (data) => {
-			console.log("send_delete_message:", data);
-			const { messageId } = data;
-		});
-		socket.on("send_friend_request", async (data) => {
-			console.log("send_friend_request:", data);
-			if (data.senderId !== socket.user.id) {
-				return;
+		socket.on("block-user:block", async (data) => {
+			try {
+				console.log("data block user", data);
+				await SocketController.handleBlockUser(io, socket, data);
+			} catch (error) {
+				console.error("Error when blocking a user: ", error.message);
+				socket.emit("block-user:error", {
+					message: error.message
+				});
 			}
-			const { receiverId } = data;
-			if (receiverId === socket.user.id) {
-				console.log("Không thể gửi lời mời kết bạn cho chính mình");
-				return;
-			}
-			const socketList = MemoryManager.getSocketList(receiverId);
-			socketList.forEach((socketId) => {
-				io.to(socketId).emit("friend_request", data);
-			});
 		});
+		socket.on("block-user:unblock", async (data) => {
+			try {
+				console.log("data unblock user", data);
+				await SocketController.handleUnBlockUser(io, socket, data);
+			} catch (error) {
+				console.error("Error when unblocking a user: ", error.message);
+				socket.emit("block-user:error", {
+					message: error.message
+				});
+			}
+		});
+		socket.on("group:leave", async (data) => {
+			try {
+				console.log("data leave group", data);
+				await SocketController.handleLeaveGroup(io, socket, data);
+			} catch (error) {
+				console.error("Error when leaving a group:", error.message);
+				socket.emit("group:error", { message: error.message });
+			}
+		});
+
 
 		// Event loginQR:generate
 		socket.on("loginQR:generate", () => {
@@ -124,52 +139,52 @@ const socketRoutes = (io) => {
 			console.log(`❌ Client disconnected: ${socket.id}`);
 		});
 
-		socket.on("message:delete_message", (data) => {
-			console.log("send_delete_message:", data);
-			const { messageId } = data;
+		socket.on("message:delete_message", async (data) => {
+			try {
+				SocketController.handleDeleteMessage(io, socket, data);
+			} catch (err) {
+				console.error("Error deleting message:", err);
+				socket.emit("message:delete_failed", {
+					message: err.message
+				});
+			}
 		});
+
 
 		socket.on("friend_request:send", async (data) => {
-			console.log("send_friend_request:", data);
-			if (data.senderId !== socket.user.id) {
+			try {
+				await SocketController.handleSendFriendRequest(io, socket, data);
 				return;
+			} catch (err) {
+				console.error("Error sending friend request:", err.message);
+				socket.emit("friend_request:error", {
+					message: err.message
+				});
 			}
-			const { receiverId } = data;
-			if (receiverId === socket.user.id) {
-				console.log("Không thể gửi lời mời kết bạn cho chính mình");
-				return;
-			}
-			const socketList = MemoryManager.getSocketList(receiverId);
-			socketList.forEach((socketId) => {
-				io.to(socketId).emit("friend_request:new", data);
-			});
 		});
 
-		socket.on("friend_request:send_accept", (data) => {
-			console.log("send_accept_friend_request:", data);
-			const { senderId } = data;
-			if (senderId !== socket.user.id) {
+		socket.on("friend_request:send_accept", async (data) => {
+			try {
+				await SocketController.handleAcceptFriendRequest(io, socket, data);
 				return;
+			} catch (err) {
+				console.error("Error accepting friend request:", err.message);
+				socket.emit("friend_request:error", {
+					message: err.message
+				});
 			}
-			const { receiverId } = data;
-			const socketList = MemoryManager.getSocketList(receiverId);
-			socketList.forEach((socketId) => {
-				io.to(socketId).emit("friend_request:new_accept", data);
-			});
 		});
 
-		socket.on("friend_request:delete", (data) => {
-			console.log("send_remove_friend_request:", data);
-			const { senderId } = data;
-			if (senderId !== socket.user.id) {
+		socket.on("friend_request:denying", async (data) => {
+			try {
+				await SocketController.handleDenyingFriendRequest(io, socket, data);
 				return;
+			} catch (err) {
+				console.error("Error denying friend request:", err);
+				socket.emit("friend_request:error", {
+					message: err.message
+				});
 			}
-			const { receiverId } = data;
-			const socketList = MemoryManager.getSocketList(receiverId);
-			console.log("socketList", socketList);
-			socketList.forEach((socketId) => {
-				io.to(socketId).emit("friend_request:new_delete", data);
-			});
 		});
 
 		socket.on("attachment:send", async (data) => {
@@ -343,7 +358,7 @@ const exitRoom = async (conversationId, userId) => {
 
 	const dataMessage = {
 		conversationId: conversationId,
-		senderId: conversation.participants[0],
+		senderId: conversation.participantIds[0],
 		type: "call",
 		content: "end",
 		readBy: userId,
@@ -352,7 +367,7 @@ const exitRoom = async (conversationId, userId) => {
 	const message = await messageModel.create(dataMessage);
 	conversation.lastMessage = message._id;
 	await conversation.save();
-	sendMessage(getIO(), conversation.participants, message);
+	sendMessage(getIO(), conversation.participantIds, message);
 	return {
 		errorCode: 200,
 		errorMessage: "Cuộc gọi đã kết thúc",
