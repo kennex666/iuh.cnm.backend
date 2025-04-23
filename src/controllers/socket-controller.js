@@ -622,23 +622,22 @@ class SocketController {
 				participantInfo
 			);
 
-			// Notify all participants in the conversation
-			const participants = updatedConversation.participantInfo.map((p) => p.id);
-			participants.forEach((participantId) => {
-				MemoryManager.getSocketList(participantId).forEach((socketId) => {
-					io.to(socketId).emit("conversation:participants_added", {
-						conversationId,
-						participantIds: participantIds
-					});
-				});
-			});
-		} catch (error) {
-			console.error("Error adding participants:", error);
-			socket.emit("conversation:error", {
-				message: "Failed to add participants"
-			});
-		}
-	}
+      // Notify all participants in the conversation
+      const participants = updatedConversation.participantInfo.map((p) => p.id);
+      participants.forEach((participantId) => {
+        MemoryManager.getSocketList(participantId).forEach((socketId) => {
+          io.to(socketId).emit("conversation:participants_added", {
+            updatedConversation: updatedConversation,
+          });
+        });
+      });
+    } catch (error) {
+      console.error("Error adding participants:", error);
+      socket.emit("conversation:error", {
+        message: "Failed to add participants"
+      });
+    }
+  }
 
 	static async handleRemoveParticipants(io, socket, data) {
 		try {

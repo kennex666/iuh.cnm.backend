@@ -10,7 +10,8 @@ const {
   transferAdminRole,
   grantModRole,
   updateAllowMessaging,
-  pinMessage
+  pinMessage,
+  joinGroupByUrlService
 } = require("../services/conversation-service");
 const {
   AppError,
@@ -19,6 +20,8 @@ const {
 } = require("../utils/response-format");
 const userService = require("../services/user-service");
 const { updateSearchIndex } = require("../models/conversation-model");
+const { generateIdSnowflake } = require("../utils/id-generators");
+const conversation = require("../models/conversation-model");
 const getAllConversationsController = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -61,7 +64,6 @@ const createConversationController = async (req, res) => {
       avatarGroup,
       participantIds = [],
       participantInfo = [],
-      url,
       pinMessages = [],
       settings = {}
     } = req.body;
@@ -97,6 +99,9 @@ const createConversationController = async (req, res) => {
         }
       }
     }
+    const conversationId = generateIdSnowflake(); // Tạo conversationId
+    const url = `https://imessify.com/conversations/${conversationId}`;
+
 
     const newConversation = await createConversation({
       isGroup,
@@ -375,6 +380,23 @@ const pinMessageController = async (req, res) => {
   }
 };
 
+const joinGroupByUrlController = async (req, res) => {
+  try {
+    const userId = req.user.id; // Lấy userId từ token
+    const { url } = req.body; // Lấy URL từ request
+
+    // Gọi service để xử lý logic
+    const result = await joinGroupByUrlService(userId, url);
+
+    // Trả về kết quả
+    responseFormat(res, result, result.message, true, 200);
+  } catch (error) {
+    console.error("Error in joinGroupByUrlController:", error);
+    handleError(error, res, "Failed to join group");
+  }
+  
+};
+
 module.exports = {
   getAllConversationsController,
   getConversationByIdController,
@@ -386,5 +408,6 @@ module.exports = {
   transferAdminController,
   grantModController,
   updateAllowMessagingCotroller,
-  pinMessageController
+  pinMessageController,
+  joinGroupByUrlController
 };

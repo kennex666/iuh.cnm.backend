@@ -3,7 +3,7 @@ const {getAllConversationsController, getConversationByIdController,
     createConversationController, updateConversationController, 
     deleteConversationController,addParticipantsController, removeParticipantsController, 
     transferAdminController, grantModController,updateAllowMessagingCotroller,
-    pinMessageController} = require("../controllers/conversation-controller");
+    pinMessageController,joinGroupByUrlController} = require("../controllers/conversation-controller");
 const {authMiddleware} = require("../middlewares/auth");
 const conversationRoute = express.Router();
 
@@ -16,9 +16,6 @@ conversationRoute.get("/:id", getConversationByIdController);
 //save conversation
 conversationRoute.post("/", createConversationController);
 //update conversation
-conversationRoute.put("/:id", updateConversationController);
-//delete conversation
-conversationRoute.delete("/:id", deleteConversationController);
 //add participants
 conversationRoute.put("/add-participants/:id", addParticipantsController);
 //remove participants
@@ -31,6 +28,12 @@ conversationRoute.put("/grant-mod-role/:id", grantModController);
 conversationRoute.put("/update-allow-messaging/:id", updateAllowMessagingCotroller);
 //pin message
 conversationRoute.put("/pin-message/:id", pinMessageController);
+//join group by url
+conversationRoute.put("/join-group-by-url", joinGroupByUrlController);
+
+conversationRoute.put("/:id", updateConversationController);
+//delete conversation
+conversationRoute.delete("/:id", deleteConversationController);
 
 
 module.exports = conversationRoute;
