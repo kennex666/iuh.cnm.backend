@@ -14,6 +14,7 @@ const { getConversationById, getConversationByCvsId } = require("../services/con
 const { sendMessage } = require("../services/socket-emit-service");
 const FriendList = require("../models/friend-list-model");
 const Conversation = require("../models/conversation-model");
+const typeRoleUser = require("../models/type-role-user");
 let io = null;
 
 function initSocket(server, callback) {
@@ -107,7 +108,17 @@ const socketRoutes = (io) => {
 					message: error.message
 				});
 			}
-		})
+		});
+		socket.on("group:leave", async (data) => {
+			try {
+				console.log("data leave group", data);
+				await SocketController.handleLeaveGroup(io, socket, data);
+			} catch (error) {
+				console.error("Error when leaving a group:", error.message);
+				socket.emit("group:error", { message: error.message });
+			}
+		});
+
 
 		// Event loginQR:generate
 		socket.on("loginQR:generate", () => {

@@ -15,6 +15,74 @@ const typeRequest = require('../models/type-request');
 const UserModel = require('../models/user-model');
 
 class SocketController {
+	static async handleLeaveGroup(io, socket, data) {
+		const userId = socket.user.id;
+
+		const { groupId } = data;
+		// Tìm kiếm nhóm
+		const conversation = await Conversation.findById(groupId);
+		if (!conversation) {
+			return socket.emit("group:error", { message: "Nhóm không tồn tại", status: false });
+		}
+
+		// Nếu là nhóm 1vs1 thì không cho phép rời
+		if (conversation.type === "1vs1") {
+			return socket.emit("group:error", { message: "Không thể rời nhóm 1-1", status: false });
+		}
+
+		// Kiểm tra xem user có phải là thành viên của nhóm không
+		if (!conversation.participantIds.includes(userId)) {
+			return socket.emit("group:error", { message: "Bạn không phải là thành viên của nhóm này", status: false });
+		}
+
+		// Kiểm tra xem user có phải là admin không
+		const isAdmin = conversation.participantInfo.find(
+			(participant) => participant.id === userId && participant.role === typeRoleUser.ADMIN
+		);
+
+		if (isAdmin) {
+			// Nếu là admin, yêu cầu bầu admin mới trước khi rời
+			return socket.emit("group:admin_required", {
+				message: "Bạn là admin. Vui lòng bầu người khác làm admin trước khi rời nhóm.", status: false
+			});
+		}
+		// Xóa user khỏi participantIds và participantInfo
+		const updatedConversation = await Conversation.findByIdAndUpdate(
+			groupId,
+			{
+				$pull: {
+					participantIds: userId,
+					participantInfo: { id: userId },
+				},
+			},
+			{ new: true }
+		);
+
+		// Gửi thông báo cho các thành viên còn lại
+		updatedConversation.participantIds.forEach((participantId) => {
+			MemoryManager.getSocketList(participantId).forEach((socketId) => {
+				io.to(socketId).emit("group:member-out", {
+					userId,
+					groupId,
+					message: `${socket.user.name} đã rời nhóm`,
+					status: true
+				});
+			});
+		});
+
+		// Gửi xác nhận về cho client
+		socket.emit("group:leave_success", {
+			message: "Đã rời nhóm thành công",
+			groupId,
+			status: true
+		});
+
+		// Nếu nhóm không còn thành viên, xóa nhóm
+		if (updatedConversation.participantIds.length === 0) {
+			await Conversation.findByIdAndDelete(groupId);
+			console.log(`Nhóm ${groupId} đã bị xóa vì không còn thành viên`);
+		}
+	}
 	static async handleDenyingFriendRequest(io, socket, data) {
 		const { senderId, receiverId } = data;
 		const user = socket.user;
