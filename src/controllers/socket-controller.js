@@ -242,8 +242,7 @@ class SocketController {
       participants.forEach((participantId) => {
         MemoryManager.getSocketList(participantId).forEach((socketId) => {
           io.to(socketId).emit("conversation:participants_added", {
-            conversationId,
-            participantIds: participantIds
+            updatedConversation: updatedConversation,
           });
         });
       });
