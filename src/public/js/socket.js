@@ -60,9 +60,11 @@ class SocketHandler {
 
 			console.warn("❌ User left:", socketId, "\nReason:", reason);
 
-			// Xoá video
-			const video = document.getElementById(`video-${socketId}`);
-			if (video) video.remove();
+			// query data-socket-id
+            const video = document.querySelectorAll(`[data-socket-id="${socketId}"]`);
+            (video.length > 0) && video.forEach((el) => {
+                el.remove();
+            });
 
 			// Dọn peer
 			if (windowEventHandler.peers[socketId]) {
