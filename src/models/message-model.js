@@ -9,7 +9,7 @@ const messageSchema = new Schema({
     senderId: { type: String, required: true },
     content: { type: String, default: '' },
     type: { type: String, enum: typeMessage, required: true }, // ['text', 'image', ...]
-    repliedToId: { type: String, default: null }, // nullable
+    repliedTold: { type: String, default: null }, // nullable
     sentAt: { type: Date, default: Date.now },
     readBy: { type: [String], default: [] }, // array of userId
     deleteBy: { type: [String], default: [] }, // array of userId đã xóa (soft delete)
@@ -28,5 +28,5 @@ messageSchema.statics.findByIdAndUpdate = function (id, update) {
     return this.findOneAndUpdate({ id: id }, update, { new: true });
 };
 
-const Message = model('Message', messageSchema);
-module.exports = Message;
+const messageModel = model('messageModel', messageSchema);
+module.exports = messageModel;
