@@ -42,6 +42,7 @@ class EventHandler {
 			audio: true,
 		});
 		this.localVideo.srcObject = this.localStream;
+		document.getElementById("toggle-camera").onclick();
 	}
 
 	getSocket() {
@@ -50,6 +51,7 @@ class EventHandler {
 
 	updateGridVideo() {
 		const videos = this.groupVideo.querySelectorAll("video");
+		const divUser = document.getElementById("group-video");
 		const numVideos = videos.length;
 
 		for (let i = 0; i < numVideos; i++) {
@@ -66,6 +68,18 @@ class EventHandler {
 			// auto rows tùy theo tổng số
 			this.groupVideo.style.gridAutoRows = "minmax(0, 1fr)";
 		}
+
+		// update name match socket 
+		divUser.querySelectorAll("[data-socket-id]").forEach((el) => {
+			const socketId = el.dataset.socketId;
+			if (socket.user) {
+				const user = this.users.find((user) => user.socketId == socketId);
+				e1.querySelector("img").src =
+					user.avatar || "https://placehold.co/40x40";
+				el.querySelector("span").textContent =
+					user.name || socketId;
+			}
+		});
 	}
 
 	// 🔹 Rời phòng
@@ -79,9 +93,9 @@ class EventHandler {
 			typeCall: this.typeCall,
 		});
 
-		Object.keys(peers).forEach((id) => {
-			peers[id].close();
-			delete peers[id];
+		Object.keys(this.peers).forEach((id) => {
+			this.peers[id].close();
+			delete this.peers[id];
 		});
 
 		this.localStream?.getTracks().forEach((track) => track.stop());

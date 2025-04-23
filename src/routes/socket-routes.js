@@ -17,6 +17,49 @@ const Conversation = require("../models/conversation-model");
 const typeRoleUser = require("../models/type-role-user");
 let io = null;
 
+
+const rooms = {}; // { roomId: Set(socket.id, ...) }
+const roomInfo = {};
+const waitingListMessageId = []; // list id message
+
+function waitingListMessageIdAdd(messageId) {
+	waitingListMessageId.push(messageId);
+	setTimeout(() => {
+		const index = waitingListMessageId.indexOf(messageId);
+		if (index > -1) {
+			waitingListMessageId.splice(index, 1);
+			messageModel.findById(messageId).then(async (message) => {
+				if (message) {
+					message.content = "end";
+					const conversation = await getConversationByCvsId(
+						message.conversationId
+					);
+					sendMessage(getIO(), conversation.participantIds, message.toObject());
+					message.save();
+			
+				}
+			});
+		}
+	}, 30000);
+}
+
+function kickConversation(messageId) {
+	messageModel.findById(messageId).then(async (message) => {
+		if (message) {
+			message.content = "end";
+			const conversation = await getConversationByCvsId(
+				message.conversationId
+			);
+			sendMessage(
+				getIO(),
+				conversation.participantIds,
+				message.toObject()
+			);
+			message.save();
+		}
+	});
+}
+
 function initSocket(server, callback) {
 	io = new Server(server, {
 		path: "/socket.io",
@@ -261,7 +304,6 @@ const socketRoutes = (io) => {
 }
 
 const socketWebRTC = (io) => {
-	const rooms = {}; // { roomId: Set(socket.id, ...) }
 	const pendingSockets = new Map(); // socketId -> timeout
 	const webRTC = io.of("/webrtc");
 
@@ -269,8 +311,57 @@ const socketWebRTC = (io) => {
 		console.log("👤 New connection:", socket.id);
 
 		// Tham gia phòng
-		socket.on("join-room", ({ roomId, userId, conversationId, callId }) => {
+		socket.on("join-room", async ({ roomId, userId, conversationId, callId }) => {
 			socket.user = { id: userId, conversationId, callId, roomId };
+
+			const conversationInfo = await getConversationById(userId, conversationId);
+
+			if (!conversationInfo) {
+				socket.emit("error", {
+					message: "Cuộc trò chuyện không tồn tại",
+				});
+				return;
+			}
+			// remove messageId from waitingListMessageId
+			const messageId = socket.user.callId;
+			const index = waitingListMessageId.indexOf(messageId);
+			if (index > -1) {
+				waitingListMessageId.splice(index, 1);
+			}
+
+			const roomInf = roomInfo[roomId];
+			const user = conversationInfo.participantInfo.filter(user => user.id == userId)[0];
+			console.log("user", user);
+			if (!roomInf) {
+				roomInfo[roomId] = {
+					participants: conversationInfo.participantInfo,
+					type: conversationInfo.type,
+					currentCall: [
+						{
+							userId: userId,
+							socketId: socket.id,
+							name: user.name,
+							avatar: user.avatar,
+						},
+					],
+				};
+			} else {
+				// check if userId is in currentCall
+				const isInCurrentCall = roomInf.currentCall.some(user => user.userId == userId);
+				if (isInCurrentCall) {
+					socket.emit("error", {
+						message: "Bạn đã tham gia cuộc gọi này rồi",
+					});
+					return;
+				}
+				roomInf.currentCall.push({
+					userId: userId,
+					socketId: socket.id,
+					name: user.name,
+					avatar: user.avatar,
+				});
+			}
+
 			socket.join(roomId);
 
 			if (!rooms[roomId]) rooms[roomId] = new Set();
@@ -279,8 +370,14 @@ const socketWebRTC = (io) => {
 			console.log(`📦 ${socket.id} joined room ${roomId}`);
 			console.log(`👥 Room ${roomId} has:`, [...rooms[roomId]]);
 
-			socket.emit("room-users", [...rooms[roomId]]);
-			socket.to(roomId).emit("user-joined", socket.id);
+			io.to(roomId)
+				.emit("user-list", [...roomInfo[roomId].currentCall]);
+			socket.emit("room-users", [...roomInfo[roomId].currentCall]);
+			socket.to(roomId).emit("user-joined", {
+				socketId: socket.id,
+				infoUser: conversationInfo.participantInfo.find(user => user.id == userId)[0]
+			}
+			);
 		});
 
 		socket.on("screen:share-start", (data) => {
@@ -308,12 +405,26 @@ const socketWebRTC = (io) => {
 			if (!roomId || !rooms[roomId]) return;
 
 			const timeout = setTimeout(() => {
-				rooms[roomId].delete(socket.id);
+				try {
+					rooms[roomId].delete(socket.id);
+
+				} catch (error) {
+					console.error("Error deleting socket from room:", error);
+				}
+
 				webRTC.to(roomId).emit("user-left", {
 					socketId: socket.id,
 					reason: "timeout",
+					conversationType: roomInfo[roomId].type || "1vs1",
 				});
-				if (rooms[roomId].size === 0) delete rooms[roomId];
+				if (rooms[roomId].size === 0) {
+					rooms[roomId] = undefined;
+					kickConversation(socket.user.callId);
+				} else {
+					if (roomInfo[roomId].type === "1vs1") {
+						kickConversation(socket.user.callId);
+					}
+				}
 				pendingSockets.delete(socket.id);
 			}, 10000); // giữ 10 giây để chờ reconnect
 
@@ -324,14 +435,26 @@ const socketWebRTC = (io) => {
 		socket.on("leave-room", () => {
 			const roomId = socket?.user?.roomId;
 			if (!roomId || !rooms[roomId]) return;
-
-			rooms[roomId].delete(socket.id);
+			try {
+				rooms[roomId].delete(socket.id);
+			} catch (error) {
+				console.error("Error deleting socket from room:", error);
+			}
+			
 			webRTC.to(roomId).emit("user-left", {
 				socketId: socket.id,
 				reason: "leave",
+				conversationType: roomInfo[roomId].type || "1vs1",
 			});
 
-			if (rooms[roomId].size === 0) delete rooms[roomId];
+			if (rooms[roomId].size === 0) {
+				rooms[roomId] = undefined;
+				kickConversation(socket.user.callId);
+			} else {
+				if (roomInfo[roomId].type === "1vs1") {
+					kickConversation(socket.user.callId);
+				}
+			}
 		});
 
 		// Reconnect kịp thời
@@ -409,4 +532,5 @@ module.exports = {
 	socketRoutes,
 	getIO,
 	socketWebRTC,
+	waitingListMessageIdAdd,
 };

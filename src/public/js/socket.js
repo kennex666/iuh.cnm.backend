@@ -1,5 +1,6 @@
 class SocketHandler {
     socket = null;
+    users = null;
     constructor(socket) {
         this.socket = socket;
         this.roomHandler();
@@ -7,6 +8,7 @@ class SocketHandler {
         this.signalHandler();
         this.userLeftHandler();
         this.screenShare();
+        this.errorHandler();
     }
 
     // 🔹 Khi socket kết nối
@@ -14,19 +16,20 @@ class SocketHandler {
     roomHandler() {
         this.socket.on("room-users", async (users) => {
             windowEventHandler.updateGridVideo();
-            users.forEach(async (otherSocketId) => {
-                if (otherSocketId === windowEventHandler.myId) return;
+            this.users = users;
+            users.forEach(async (other) => {
+                if (other.socketId === windowEventHandler.myId) return;
 
-                console.log("📞 Calling to:", otherSocketId);
+                console.log("📞 Calling to:", other.socketId);
 
-                const pc = webrtc.createPeerConnection(otherSocketId);
-                windowEventHandler.peers[otherSocketId] = pc;
+                const pc = webrtc.createPeerConnection(other.socketId);
+                windowEventHandler.peers[other.socketId] = pc;
 
                 const offer = await pc.createOffer();
                 await pc.setLocalDescription(offer);
 
                 this.socket.emit("signal", {
-                    to: otherSocketId,
+                    to: other.socketId,
                     type: "offer",
                     data: offer,
                 });
@@ -34,12 +37,27 @@ class SocketHandler {
         })
     }
 
+    // 🔹 Khi có lỗi xảy ra
+    errorHandler() {
+        this.socket.on("error", (error) => {
+            document.getElementById("error").classList.toggle("hidden", false);
+            document.getElementById("error-message").innerText = error.message;
+        });
+    }
+
     // 🔹 Khi có người mới vào
     joinHandler() {
-        this.socket.on("user-joined", (socketId) => {
-            console.log("👤 New peer joined:", socketId);
-            const pc = webrtc.createPeerConnection(socketId);
-            windowEventHandler.peers[socketId] = pc;
+        this.socket.on("user-joined", ({ socketId, infoUser }) => {
+			console.log("👤 New peer joined:", socketId);
+			console.log("👤 User info:", infoUser);
+			const pc = webrtc.createPeerConnection(socketId);
+			windowEventHandler.peers[socketId] = pc;
+			windowEventHandler.updateGridVideo();
+		});
+
+        this.socket.on("user-list", (users) => {
+            console.log("👤 User list:", users);
+            this.users = users;
             windowEventHandler.updateGridVideo();
         });
     }
@@ -56,7 +74,7 @@ class SocketHandler {
     // 🔹 Khi ai đó rời
    userLeftHandler(){
      this.socket.on("user-left", (data) => {
-			const { socketId, reason } = data;
+			const { socketId, reason, conversationType } = data;
 
 			console.warn("❌ User left:", socketId, "\nReason:", reason);
 
@@ -71,6 +89,11 @@ class SocketHandler {
 				windowEventHandler.peers[socketId].close();
 				delete windowEventHandler.peers[socketId];
 			}
+
+            if (conversationType == "1vs1") {
+                document.getElementById("call-ended").classList.toggle("hidden", false);
+            }
+            
 			windowEventHandler.updateGridVideo();
 		});
    }

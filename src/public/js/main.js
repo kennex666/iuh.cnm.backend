@@ -17,7 +17,7 @@ function getParameterByName(name, url = window.location.href) {
 const typeCall = getParameterByName("type");
 
 
-const windowEventHandler = new EventHandler(ROOM_ID, userId, conversationId, messageId, typeCall = "personal");
+const windowEventHandler = new EventHandler(ROOM_ID, userId, conversationId, messageId, typeCall || "personal");
 const webrtc = new WebRTCHandler();
 const socket = new SocketHandler(windowEventHandler.getSocket());
 webrtc.setSocket(windowEventHandler.getSocket());

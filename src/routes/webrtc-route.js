@@ -5,7 +5,7 @@ const messageModel = require("../models/message-model");
 const { read } = require("fs");
 const { getConversationById } = require("../services/conversation-service");
 const { sendMessage } = require("../services/socket-emit-service");
-const { getIO } = require("./socket-routes");
+const { getIO, waitingListMessageIdAdd } = require("./socket-routes");
 const { error } = require("console");
 const path = require("path");
 // const { authMiddleware } = require("../middlewares/auth");
@@ -26,6 +26,7 @@ webrtcRoute.get("/ping", (req, res) => {
 
 webrtcRoute.get("/create-call/:conversationId", authMiddleware, async (req, res) => {
     const conversationId = req.params?.conversationId;
+    const type = req.query?.type || "audio";
     const userId = req.user.id;
     if (!conversationId) {
         return res.status(200).json({errorMessage: "conversationId không được để trống", errorCode: 100});
@@ -37,7 +38,7 @@ webrtcRoute.get("/create-call/:conversationId", authMiddleware, async (req, res)
         return res.status(200).json({errorMessage: "conversationId không hợp lệ", errorCode: 100});
     }
     // Check if the user is a participant in the conversation
-    const isParticipant = conversation.participants.includes(req.user.id);
+    const isParticipant = conversation.participantIds.includes(req.user.id);
     if (!isParticipant) {
         return res.status(200).json({errorMessage: "Bạn không phải là người tham gia cuộc trò chuyện này", errorCode: 100});
     }
@@ -52,7 +53,10 @@ webrtcRoute.get("/create-call/:conversationId", authMiddleware, async (req, res)
 
     if (recentlyMessage) {
         if (recentlyMessage.content === "start") {
-            return res.status(200).json({ errorMessage: "Cuộc gọi đã được bắt đầu trước đó", errorCode: 100 });
+            // update message content to "end"
+            recentlyMessage.content = "end";
+            recentlyMessage.readBy = [req.user.id];
+            await recentlyMessage.save();
         }
     }
 
@@ -67,7 +71,8 @@ webrtcRoute.get("/create-call/:conversationId", authMiddleware, async (req, res)
     const message = await messageModel.create(dataMessage);
     conversation.lastMessage = message._id;
     await conversation.save();
-    sendMessage(getIO(), conversation.participants, message);
+    sendMessage(getIO(), conversation.participantIds, message);
+    waitingListMessageIdAdd(message.id);
     res.status(200).json({
         message: "Cuộc gọi đã được bắt đầu",
         data: message,
@@ -87,7 +92,7 @@ webrtcRoute.get("/end-call/:conversationId", authMiddleware, async (req, res) =>
         return res.status(200).json({errorMessage: "conversationId không hợp lệ", errorCode: 100});
     }
     // Check if the user is a participant in the conversation
-    const isParticipant = conversation.participants.includes(req.user.id);
+    const isParticipant = conversation.participantIds.includes(req.user.id);
     if (!isParticipant) {
         return res.status(200).json({errorMessage: "Bạn không phải là người tham gia cuộc trò chuyện này", errorCode: 100});
     }
@@ -119,7 +124,7 @@ webrtcRoute.get("/end-call/:conversationId", authMiddleware, async (req, res) =>
     const message = await messageModel.create(dataMessage);
     conversation.lastMessage = message._id;
     await conversation.save();
-    sendMessage(getIO(), conversation.participants, message);
+    sendMessage(getIO(), conversation.participantIds, message);
     res.status(200).json({
         message: "Cuộc gọi đã kết thúc",
         data: message,

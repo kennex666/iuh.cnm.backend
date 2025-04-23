@@ -58,6 +58,16 @@ class WebRTCHandler {
 			// ✅ Tạo stream riêng biệt
 			const incomingStream = new MediaStream([incomingTrack]);
 
+			var user = {
+				socketId: socketId,
+				name: socketId,
+				avatar: "https://placehold.co/40x40",
+			}
+			if (socket.users){
+				user = socket.users.find((user) => user.socketId == socketId);
+			}
+
+
 			// ✅ Render UI
 			const div = document.createElement("div");
 			div.dataset.trackId = trackId;
@@ -78,12 +88,12 @@ class WebRTCHandler {
 				"absolute bottom-2 left-2 flex items-center space-x-2 bg-black/60 px-3 py-1 rounded-full text-white text-sm backdrop-blur-md";
 
 			const img = document.createElement("img");
-			img.src = "https://placehold.co/40x40";
+			img.src = user?.avatar || "https://placehold.co/40x40";
 			img.className = "w-6 h-6 rounded-full border border-white";
 
 			const span = document.createElement("span");
 			span.className = "font-medium";
-			span.textContent = socketId;
+			span.textContent = user?.name || socketId;
 
 			divUser.appendChild(img);
 			divUser.appendChild(span);
