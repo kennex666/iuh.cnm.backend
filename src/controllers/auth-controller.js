@@ -39,57 +39,57 @@ class AuthController {
 		try {
 			const { phone, password, otp = null } = req.body;
 			const result = await AuthService.login(phone, password);
-			// if (!result) {
-			// 	return responseFormat(
-			// 		res,
-			// 		null,
-			// 		"Invalid phone or password",
-			// 		false,
-			// 		400
-			// 	);
-			// }
-			// // Check if the user isnt verified
-			// if (result?.user?.isVerified === false) {
-			// 	resendOtpHelper(phone, "Ban dang thuc hien thao tac tao tai khoan tai iMessify.");
-			// 	return responseFormat(
-			// 		res,
-			// 		null,
-			// 		"Account not verified",
-			// 		false,
-			// 		207
-			// 	);
-			// }
-			// // Check if the user has two-factor authentication enabled
-			// if (result?.user?.settings?.twoFAEnabled) {
-			// 	if (!otp) {
-			// 		return responseFormat(
-			// 			res,
-			// 			null,
-			// 			"OTP is required",
-			// 			false,
-			// 			203
-			// 		);
-			// 	}
+			if (!result) {
+				return responseFormat(
+					res,
+					null,
+					"Invalid phone or password",
+					false,
+					400
+				);
+			}
+			// Check if the user isnt verified
+			if (result?.user?.isVerified === false) {
+				resendOtpHelper(phone, "Ban dang thuc hien thao tac tao tai khoan tai iMessify.");
+				return responseFormat(
+					res,
+					null,
+					"Account not verified",
+					false,
+					207
+				);
+			}
+			// Check if the user has two-factor authentication enabled
+			if (result?.user?.settings?.twoFAEnabled) {
+				if (!otp) {
+					return responseFormat(
+						res,
+						null,
+						"OTP is required",
+						false,
+						203
+					);
+				}
 
-			// 	// Check if the user has a twoFASecret
-			// 	if (!result?.user?.settings?.twoFASecret) {
-			// 		return responseFormat(
-			// 			res,
-			// 			null,
-			// 			"Two-factor authentication secret not found",
-			// 			false,
-			// 			400
-			// 		);
-			// 	}
+				// Check if the user has a twoFASecret
+				if (!result?.user?.settings?.twoFASecret) {
+					return responseFormat(
+						res,
+						null,
+						"Two-factor authentication secret not found",
+						false,
+						400
+					);
+				}
 
-			// 	const isValid = await verify2FACode(
-			// 		otp,
-			// 		result.user.settings.twoFASecret
-			// 	);
-			// 	if (!isValid) {
-			// 		return responseFormat(res, null, "Invalid OTP", false, 400);
-			// 	}
-			// }
+				const isValid = await verify2FACode(
+					otp,
+					result.user.settings.twoFASecret
+				);
+				if (!isValid) {
+					return responseFormat(res, null, "Invalid OTP", false, 400);
+				}
+			}
 			responseFormat(res, result, "Login successful", true, 200);
 		} catch (error) {
 			handleError(error, res, "Login failed");
