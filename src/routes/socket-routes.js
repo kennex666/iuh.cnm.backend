@@ -28,19 +28,6 @@ function initSocket(server, callback) {
 		},
 		maxHttpBufferSize: 10 * 1024 * 1024,
 	});
-	io = new Server(server, {
-		path: "/socket.io",
-		cors: {
-			origin: "*",
-			methods: ["GET", "POST"],
-			allowedHeaders: ["Content-Type", "Authorization"],
-			credentials: true,
-		},
-		maxHttpBufferSize: 10 * 1024 * 1024,
-	});
-
-	callback(io);
-	console.log("Socket.io initialized");
 	callback(io);
 	console.log("Socket.io initialized");
 }
@@ -50,14 +37,9 @@ function getIO() {
 		throw new Error("❌ Socket.io chưa được khởi tạo");
 	}
 	return io;
-	if (!io) {
-		throw new Error("❌ Socket.io chưa được khởi tạo");
-	}
-	return io;
 }
 
 const socketRoutes = (io) => {
-	io.use(authSocketMiddleware);
 	io.use(authSocketMiddleware);
 
 	io.on("connection", (socket) => {
@@ -73,16 +55,6 @@ const socketRoutes = (io) => {
 		});
 
 		socket.join(socket.user.id);
-
-		// socket.on('join_conversation', (conversationId) => {
-		//     console.log("join_conversation:", conversationId);
-		//     socket.join(conversationId);
-		// });
-
-		// socket.on('leave_conversation', (conversationId) => {
-		//     console.log("leave_conversation:", conversationId);
-		//     socket.leave(conversationId);
-		// });
 
 		// Event message:send
 		/**

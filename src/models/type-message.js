@@ -5,6 +5,7 @@ const typeMessage = Object.freeze({
     REACTION: 'reaction',
     CALL: 'call',
     SYSTEM: 'system',
+    VOTE: 'vote'
 });
 
 module.exports = typeMessage;

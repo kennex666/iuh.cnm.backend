@@ -8,6 +8,7 @@ const typeMessage = require('../models/type-message');
 const getAllMessages = async (userId) => {
     try {
         const messages = await messageModel.find({senderId: userId});
+        // Sort messages by sentAt in descending order
         return messages;
     } catch (err) {
         console.error("Error creating message:", err);
@@ -37,7 +38,7 @@ const getMessageByConversationId = async (req, res) => {
         const conversationId = req.params.id;
         const number = req.query.number
         const messageData = await messageModel.find({conversationId })
-        .sort({createdAt: -1})
+        .sort({createdAt: 1})
         .limit(number);
         
         // update readBy first

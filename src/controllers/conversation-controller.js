@@ -33,7 +33,7 @@ const getAllConversationsController = async (req, res) => {
     responseFormat(
       res,
       conversations,
-      "User retrieved successfully",
+      "Conversation retrieved successfully",
       true,
       200
     );
