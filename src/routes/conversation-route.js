@@ -3,7 +3,7 @@ const {getAllConversationsController, getConversationByIdController,
     createConversationController, updateConversationController, 
     deleteConversationController,addParticipantsController, removeParticipantsController, 
     transferAdminController, grantModController,updateAllowMessagingCotroller,
-    pinMessageController,joinGroupByUrlController, checkUrlExistController} = require("../controllers/conversation-controller");
+    pinMessageController,joinGroupByUrlController, checkUrlExistController, removeModController} = require("../controllers/conversation-controller");
 const {authMiddleware} = require("../middlewares/auth");
 const conversationRoute = express.Router();
 
@@ -15,7 +15,6 @@ conversationRoute.get("/", getAllConversationsController);
 conversationRoute.get("/:id", getConversationByIdController);
 //save conversation
 conversationRoute.post("/", createConversationController);
-//update conversation
 //add participants
 conversationRoute.put("/add-participants/:id", addParticipantsController);
 //remove participants
@@ -24,6 +23,8 @@ conversationRoute.put("/remove-participants/:id", removeParticipantsController);
 conversationRoute.put("/transfer-admin/:id", transferAdminController);
 //grant mod role
 conversationRoute.put("/grant-mod-role/:id", grantModController);
+// remove mod role
+conversationRoute.put("/remove-mod-role/:id", removeModController);
 //update allow messaging (Nhắn vào là đổi trạng thái từ fasle thành true và ngược lại)
 conversationRoute.put("/update-allow-messaging/:id", updateAllowMessagingCotroller);
 //pin message
