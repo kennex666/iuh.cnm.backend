@@ -266,6 +266,7 @@ const socketRoutes = (io) => {
 		});
 
 		socket.on("conversation:remove_participants", async (data) => {
+			console.log("data remove participants", data);
 			await SocketController.handleRemoveParticipants(io, socket, data);
 		});
 

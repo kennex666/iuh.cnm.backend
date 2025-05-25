@@ -1,5 +1,5 @@
 const {getAllMessages, getMessageById, createMessage, updateMessage, 
-    deleteMessage, getMessageByConversationId,getMessageBySenderId, createVote} = require("../services/message-service");
+    deleteMessage, getMessageByConversationId,getMessageBySenderId, createVote,reactionsMessages} = require("../services/message-service");
 const {handleError,responseFormat,AppError } = require("../utils/response-format");
 const getAllMessagesController = async (req, res) => {
     try {
@@ -129,6 +129,23 @@ const createVoteController = async (req, res) => {
     }
   };
 
+  const reactionsMessageController = async (req, res) => {
+    try {
+        const { messageId } = req.params;
+        userId = req.user.id; 
+        const { reactionType } = req.body;
+
+        if (!messageId || !userId) {
+            return res.status(200).json({ message: "Missing required fields" });
+        }
+
+        const result = await reactionsMessages(messageId, userId, reactionType);
+        responseFormat(res, result, "Reaction added successfully", true, 200);
+    } catch (error) {
+        handleError(error, res, "Failed to add reaction");
+    }
+}
+
 module.exports = {
     getAllMessagesController,
     getMessageByIdController,
@@ -137,5 +154,6 @@ module.exports = {
     deleteMessageController,
     getMessageByConversationIdController,
     getMessageBySenderIdController,
-    createVoteController
+    createVoteController,
+    reactionsMessageController
 };

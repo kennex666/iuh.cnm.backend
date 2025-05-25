@@ -161,7 +161,30 @@ const createVote = async ({ senderId, conversationId, question, options, multipl
     return message;
   };
 
-
+const reactionsMessages = async (messageId, userId, reactionType) => {
+    try {
+        const message = await messageModel
+            .findById(messageId)
+            .select('reaction');
+        if (!message) {
+            throw new Error("Message not found");
+        }
+        if (!message.reaction) {
+            message.reaction = {};
+        }
+        if (reactionType) {
+            message.reaction.set(userId, reactionType);
+        } else {
+            message.reaction.delete(userId);
+        }
+        await message.save();
+        return message;
+    }
+    catch (error) {
+        console.error("Error while adding reaction:", error);
+        throw new Error("Không thể thêm phản ứng. Vui lòng thử lại sau.");
+    }
+}
 
 module.exports = {
 	getAllMessages,
@@ -172,5 +195,6 @@ module.exports = {
 	getMessageByConversationId,
 	getMessageBySenderId,
 	updateSeen,
-    createVote
+    createVote,
+    reactionsMessages
 };
