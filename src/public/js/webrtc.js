@@ -4,7 +4,7 @@ class WebRTCHandler {
 		{
 			url: "stun:global.stun.twilio.com:3478",
 			urls: "stun:global.stun.twilio.com:3478",
-		},
+		}
 	];
 
 	constructor() {}
@@ -48,8 +48,7 @@ class WebRTCHandler {
 
 			// ⛔ Nếu không phải video, bỏ qua
 			if (incomingTrack.kind !== "video") {
-				console.warn("❌ No camera/screen video track");
-				return;
+				console.warn("❌ No camera/screen video track", incomingTrack);
 			}
 
 			// ⛔ Nếu đã tồn tại trackId rồi → không render nữa
@@ -62,48 +61,48 @@ class WebRTCHandler {
 				socketId: socketId,
 				name: socketId,
 				avatar: "https://placehold.co/40x40",
-			}
-			if (socket.users){
+			};
+			if (socket.users) {
 				user = socket.users.find((user) => user.socketId == socketId);
 			}
 
-
 			// ✅ Render UI
-			const div = document.createElement("div");
-			div.dataset.trackId = trackId;
-			div.dataset.type = "camera";
-			div.setAttribute("data-socket-id", socketId);
-			div.className =
-				"relative aspect-video bg-black rounded-xl overflow-hidden ring-1 ring-white";
+			if (incomingTrack.kind == "video"){
+				const div = document.createElement("div");
+				div.dataset.trackId = trackId;
+				div.dataset.type = "camera";
+				div.setAttribute("data-socket-id", socketId);
+				div.className =
+					"relative aspect-video bg-black rounded-xl overflow-hidden ring-1 ring-white";
 
-			const video = document.createElement("video");
-			video.autoplay = true;
-			video.playsInline = true;
-			video.srcObject = incomingStream;
-			video.className = "w-full h-full object-cover rounded-xl";
+				const video = document.createElement("video");
+				video.autoplay = true;
+				video.playsInline = true;
+				video.srcObject = incomingStream;
+				video.className = "w-full h-full object-cover rounded-xl";
 
-			// ✅ Info người dùng
-			const divUser = document.createElement("div");
-			divUser.className =
-				"absolute bottom-2 left-2 flex items-center space-x-2 bg-black/60 px-3 py-1 rounded-full text-white text-sm backdrop-blur-md";
+				// ✅ Info người dùng
+				const divUser = document.createElement("div");
+				divUser.className =
+					"absolute bottom-2 left-2 flex items-center space-x-2 bg-black/60 px-3 py-1 rounded-full text-white text-sm backdrop-blur-md";
 
-			const img = document.createElement("img");
-			img.src = user?.avatar || "https://placehold.co/40x40";
-			img.className = "w-6 h-6 rounded-full border border-white";
+				const img = document.createElement("img");
+				img.src = user?.avatar || "https://placehold.co/40x40";
+				img.className = "w-6 h-6 rounded-full border border-white";
 
-			const span = document.createElement("span");
-			span.className = "font-medium";
-			span.textContent = user?.name || socketId;
+				const span = document.createElement("span");
+				span.className = "font-medium";
+				span.textContent = user?.name || socketId;
 
-			divUser.appendChild(img);
-			divUser.appendChild(span);
-			div.appendChild(video);
-			div.appendChild(divUser);
-			windowEventHandler.groupVideo.appendChild(div);
+				divUser.appendChild(img);
+				divUser.appendChild(span);
+				div.appendChild(video);
+				div.appendChild(divUser);
+				windowEventHandler.groupVideo.appendChild(div);
+			}
 
 			windowEventHandler.updateGridVideo();
 		};
-
 
 		// 🔸 Khi có ICE Candidate
 		pc.onicecandidate = (event) => {
