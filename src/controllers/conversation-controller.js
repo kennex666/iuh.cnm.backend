@@ -170,6 +170,7 @@ const updateConversationController = async (req, res) => {
     handleError(error, res, "Update conversation failed");
   }
 };
+
 const deleteConversationController = async (req, res) => {
   try {
     // const userId = req.user.id; // Lấy userId từ token
@@ -286,6 +287,15 @@ const addParticipantsController = async (req, res) => {
     const conversationId = req.params.id;
     const { participantIds } = req.body;
 
+    const conversation = await getConversationById(userId, conversationId);
+    if (!conversation) {
+      throw new AppError("Conversation not found", 404);
+    }
+
+    const currentName = conversation.participantInfo.find(
+      (p) => p.id === userId
+    )?.name;
+
     // Fetch participant information and avoid duplicates
     const fetchedParticipants = new Set(); // To track unique participant IDs
     const participantInfo = await Promise.all(
@@ -310,6 +320,8 @@ const addParticipantsController = async (req, res) => {
       })
     ).then((results) => results.filter((info) => info !== null)); // Remove null values
 
+    const newNameParticipants = participantInfo.map((info) => info.name);
+
     const updatedConversation = await addParticipants(
       conversationId,
       participantIds,
@@ -319,6 +331,24 @@ const addParticipantsController = async (req, res) => {
     if (!updatedConversation) {
       throw new AppError("Failed to add participants", 400);
     }
+
+    const message = await createMessage({
+        conversationId: updatedConversation.id,
+        senderId: userId,
+        type: "system",
+        content: `${currentName} đã thêm thành viên mới: ${newNameParticipants.join(
+          ", "
+        )}`,
+        readBy: [userId],
+    });
+
+
+    // Gửi thông báo cho tất cả người tham gia cuộc trò chuyện
+    sendMessage(
+      getIO(),
+      updatedConversation.participantInfo.map((p) => p.id),
+      message
+    );
 
     responseFormat(
       res,
@@ -338,6 +368,13 @@ const removeParticipantsController = async (req, res) => {
     const conversationId = req.params.id;
     const { participantIds } = req.body;
 
+    const conversation = await getConversationById(userId, conversationId);
+    if (!conversation) {
+      throw new AppError("Conversation not found", 404);
+    }
+
+    const participants = conversation.participantInfo;
+
     const updatedConversation = await removeParticipants(
       conversationId,
       participantIds
@@ -346,6 +383,30 @@ const removeParticipantsController = async (req, res) => {
     if (!updatedConversation) {
       throw new AppError("Failed to remove participants", 400);
     }
+
+    
+
+    const currentName = conversation.participantInfo.find(
+      (p) => p.id === userId
+    )?.name;
+
+    const removed = participants.filter((p) => !updatedConversation.participantIds.includes(p.id));
+
+
+    const message = await createMessage({
+      conversationId: updatedConversation.id,
+      senderId: userId,
+      type: "system",
+      content: `${currentName} xoá thành viên: ${removed.map((p) => p.name).join(", ")}`,
+      readBy: [userId],
+    });
+
+    // Gửi thông báo cho tất cả người tham gia cuộc trò chuyện
+    sendMessage(
+      getIO(),
+      updatedConversation.participantInfo.map((p) => p.id),
+      message
+    );
 
     responseFormat(
       res,
