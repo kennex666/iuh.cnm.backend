@@ -301,6 +301,10 @@ const socketRoutes = (io) => {
 		socket.on("conversation:delete", async (data) => {
 			await SocketController.handleDeleteConversation(io, socket, data);
 		});
+
+		socket.on("chatwithAI:send", async (data) => {
+			await SocketController.handleChatWithAI(io, socket, data);
+		});
 	});
 }
 

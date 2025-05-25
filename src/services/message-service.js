@@ -163,6 +163,48 @@ const createVote = async ({ senderId, conversationId, question, options, multipl
 
 const reactionsMessages = async (messageId, userId, reactionType) => {
     try {
+        const message = await messageModel.findById(messageId).select('reaction');
+        if (!message) throw new Error("Message not found");
+
+        if (!message.reaction) {
+            message.reaction = new Map();
+        }
+
+        // Đảm bảo reaction là Map
+        if (!(message.reaction instanceof Map)) {
+            message.reaction = new Map(Object.entries(message.reaction));
+        }
+
+        const currentReaction = message.reaction.get(userId);
+
+        if (currentReaction === reactionType) {
+            message.reaction.delete(userId);
+        } else {
+            message.reaction.set(userId, reactionType);
+        }
+
+        message.markModified('reaction');
+        await message.save();
+
+        // Chuyển Map về object để trả về client
+        const reactionObj = {};
+        for (const [key, value] of message.reaction.entries()) {
+            reactionObj[key] = value;
+        }
+
+        return {
+            reaction: reactionObj
+        };
+
+    } catch (error) {
+        console.error(error);
+        throw error;
+    }
+};
+
+
+const getReactionsMessage = async (messageId) => {
+    try {
         const message = await messageModel
             .findById(messageId)
             .select('reaction');
@@ -170,21 +212,20 @@ const reactionsMessages = async (messageId, userId, reactionType) => {
             throw new Error("Message not found");
         }
         if (!message.reaction) {
-            message.reaction = {};
+            return {};
         }
-        if (reactionType) {
-            message.reaction.set(userId, reactionType);
-        } else {
-            message.reaction.delete(userId);
-        }
-        await message.save();
-        return message;
+        const reactions = {};
+        message.reaction.forEach((value, key) => {
+            reactions[key] = value;
+        });
+        return reactions;
     }
     catch (error) {
-        console.error("Error while adding reaction:", error);
-        throw new Error("Không thể thêm phản ứng. Vui lòng thử lại sau.");
+        console.error("Error while fetching reactions:", error);
+        throw new Error("Không thể lấy phản ứng. Vui lòng thử lại sau.");
     }
 }
+
 
 module.exports = {
 	getAllMessages,
@@ -196,5 +237,6 @@ module.exports = {
 	getMessageBySenderId,
 	updateSeen,
     createVote,
-    reactionsMessages
+    reactionsMessages,
+    getReactionsMessage
 };

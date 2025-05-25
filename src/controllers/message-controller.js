@@ -1,5 +1,5 @@
 const {getAllMessages, getMessageById, createMessage, updateMessage, 
-    deleteMessage, getMessageByConversationId,getMessageBySenderId, createVote,reactionsMessages} = require("../services/message-service");
+    deleteMessage, getMessageByConversationId,getMessageBySenderId, getReactionsMessage, createVote,reactionsMessages} = require("../services/message-service");
 const {handleError,responseFormat,AppError } = require("../utils/response-format");
 const getAllMessagesController = async (req, res) => {
     try {
@@ -140,10 +140,23 @@ const createVoteController = async (req, res) => {
         }
 
         const result = await reactionsMessages(messageId, userId, reactionType);
-        responseFormat(res, result, "Reaction added successfully", true, 200);
+        responseFormat(res, result.reaction, "Reaction added successfully", true, 200);
     } catch (error) {
         handleError(error, res, "Failed to add reaction");
     }
+}
+
+ const getReactionsMessageController = async (req, res) => {
+        try {
+            const { messageId } = req.params;
+            if (!messageId) {
+                return res.status(400).json({ message: "Message ID is required" });
+            }
+            const reactions = await getReactionsMessage(messageId);
+            responseFormat(res, reactions, "Get reactions successfully", true, 200);
+        } catch (error) {
+            handleError(error, res, "Failed to retrieve reactions");
+        }
 }
 
 module.exports = {
@@ -155,5 +168,6 @@ module.exports = {
     getMessageByConversationIdController,
     getMessageBySenderIdController,
     createVoteController,
-    reactionsMessageController
+    reactionsMessageController,
+    getReactionsMessageController
 };

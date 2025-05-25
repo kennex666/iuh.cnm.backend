@@ -1,5 +1,10 @@
 const mongoose = require('mongoose');
 const Conversation = require('../models/conversation-model');
+const axios = require('axios');
+dotenv = require('dotenv');
+dotenv.config();
+const API_URL = process.env.API_URL || 'http://localhost:3000/api/v1';
+const API_KEY = process.env.API_KEY || 'your_api_key_here';
 
 class SocketService {
     // Broadcast user status (online/offline) to all participants in private conversations
@@ -43,6 +48,38 @@ class SocketService {
         }
 
         return conversations;
+    }
+
+    static async getAIResponse(message) {
+        try {
+            const response = await axios.post(
+                `${API_URL}?key=${API_KEY}`,
+                {
+                contents: [
+                    {
+                    parts: [
+                        {
+                        text: message,
+                        },
+                    ],
+                    },
+                ],
+                },
+                {
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                }
+            );
+        
+            const responseData = response.data;
+            const responseText = responseData.candidates[0]?.content?.parts[0]?.text || '';
+        
+            return responseText;
+            } catch (error) {
+            console.error('Error:', error.response ? error.response.data : error.message);
+            throw error;
+        }
     }
 }
 

@@ -25,7 +25,7 @@ const friendRequestModel = require('../models/friendrequest-model');
 const { createFriendRequest } = require('../services/friendrequest-service');
 const typeRequest = require('../models/type-request');
 const UserModel = require('../models/user-model');
-
+const { verifyToken } = require("../utils/authen");
 
 class SocketController {
 	static async handleUpdateNickNameInConversation(io, socket, data) {
@@ -1073,6 +1073,50 @@ class SocketController {
 			console.error("Error deleting conversation:", error);
 			socket.emit("conversation:error", {
 				message: error.message || "Failed to delete conversation"
+			});
+		}
+	}
+
+	static async handleChatWithAI(io, socket, data) {
+		try {
+			const { message, token } = data;
+			console.log("AI chat data:", data);
+
+			if (!message) {
+				return socket.emit("ai:error", {
+					message: "Invalid data for AI chat"
+				});
+			}
+
+			const aiResponse = await SocketService.getAIResponse(message);
+			if (!aiResponse) {
+				return socket.emit("ai:error", {
+					message: "Failed to get AI response"
+				});
+			}
+
+			const user = verifyToken(token);
+			if (!user) {
+				return socket.emit("ai:error", {
+					message: "Invalid user token"
+				});
+			}
+
+			const sockets = MemoryManager.getSocketList(user.id);
+			console.log("Sockets for user:", sockets);
+			sockets.forEach((socketId) => {
+				io.to(socketId).emit("ai:response", {
+					message: aiResponse,
+				});
+			});
+
+			socket.emit("ai:response:success", {
+				message: "AI response sent successfully"
+			});
+		} catch (error) {
+			console.error("Error handling AI chat:", error);
+			socket.emit("ai:error", {
+				message: error.message || "Failed to handle AI chat"
 			});
 		}
 	}
