@@ -24,6 +24,8 @@ const { updateSearchIndex } = require("../models/conversation-model");
 const { generateIdSnowflake } = require("../utils/id-generators");
 const conversation = require("../models/conversation-model");
 const Conversation = require("../models/conversation-model");
+const { sendMessage } = require("../services/socket-emit-service");
+const { getIO } = require("../utils/socketio");
 const getAllConversationsController = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -185,6 +187,17 @@ const deleteConversationController = async (req, res) => {
       throw new AppError("Conversation not found", 404);
     }
 
+    sendMessage(
+      getIO(),
+      deletedConversation.participantInfo.map((p) => p.id),
+      {
+        conversationId: deletedConversation.id,
+        senderId: req.user.id,
+        type: "deleted_conversation",
+        content: "end",
+        readBy: [req.user.id],
+      }
+    );
     responseFormat(
       res,
       deletedConversation,
@@ -193,6 +206,7 @@ const deleteConversationController = async (req, res) => {
       200
     );
   } catch (error) {
+    console.log(error)
     handleError(error, res, "Delete conversation failed");
   }
 };

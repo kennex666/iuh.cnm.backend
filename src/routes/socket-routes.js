@@ -15,6 +15,7 @@ const { sendMessage } = require("../services/socket-emit-service");
 const FriendList = require("../models/friend-list-model");
 const Conversation = require("../models/conversation-model");
 const typeRoleUser = require("../models/type-role-user");
+const { setIO } = require("../utils/socketio");
 let io = null;
 
 
@@ -71,6 +72,7 @@ function initSocket(server, callback) {
 		},
 		maxHttpBufferSize: 10 * 1024 * 1024,
 	});
+	setIO(io);
 	callback(io);
 	console.log("Socket.io initialized");
 }
@@ -110,12 +112,20 @@ const socketRoutes = (io) => {
 		 */
 		socket.on("message:send", async (data) => {
 			console.log("data send from client", data);
-			await SocketController.handleSendMessage(io, socket, data);
+			try {
+				await SocketController.handleSendMessage(io, socket, data);
+			} catch(e){
+				console.error("Error sending message:", e);
+			}
 		});
 
 		socket.on("message:seen", async (messageId) => {
-			console.log("message:seen:", messageId);
-			await updateSeen(messageId, socket.user.id);
+			try {
+				console.log("message:seen:", messageId);
+				await updateSeen(messageId, socket.user.id);
+			} catch (e){
+				console.error("Error updating seen status:", e);
+			}
 		});
 
 		socket.on("block-user:block", async (data) => {

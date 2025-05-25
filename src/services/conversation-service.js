@@ -126,10 +126,34 @@ const updateConversation = async (req, res) => {
 const deleteConversation = async (req, res) => {
   try {
     const conversationId = req.params.id;
+
+    const checkExist = await conversation.findOne({ id: conversationId });
+    // Kiểm tra xem cuộc trò chuyện có tồn tại không
+    if (!checkExist) {
+      throw new Error("Cuộc trò chuyện không tồn tại");
+    }
+
+    const findIdInParticipantInfo = checkExist.participantInfo.findIndex(
+      (participant) => {
+        console.log(participant.id, req.user.id, participant.role);
+        return participant.id == req.user.id && participant.role == "admin";
+      }
+	);
+
+    console.log(findIdInParticipantInfo);
+
+    if (findIdInParticipantInfo == -1) {
+      throw new Error("Bạn không có quyền xóa cuộc trò chuyện này");
+    }
+
     const deletedConversation = await conversation.findByIdAndDelete(
       conversationId
     );
-    return deletedConversation;
+    // Kiểm tra xem cuộc trò chuyện có được xóa không
+    if (!deletedConversation) {
+      throw new Error("Không thể xóa cuộc trò chuyện");
+    }
+    return checkExist;
   } catch (error) {
     console.error("Error deleting conversation:", error);
     if (error instanceof Error) {
