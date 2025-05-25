@@ -405,6 +405,38 @@ const joinGroupByUrlService = async (userId, url) => {
   };
 };
 
+// Xóa quyền mod của người dùng
+const removeModRole = async (conversationId, fromUserId, toUserId) => {
+  const conversations = await conversation.findOne({ id: conversationId });
+  if (!conversations) throw new AppError("Conversation not found", 404);
+  
+  const currentUser = conversations.participantInfo.find(
+    (p) => p.id === fromUserId
+  );
+  if (!currentUser || currentUser.role !== "admin") {
+    throw new AppError(
+      "Permission denied. Only admin can remove mod role.",
+      403
+    );
+  }
+
+  const targetUser = conversations.participantInfo.find(
+    (p) => p.id === toUserId
+  );
+  if (!targetUser) {
+    throw new AppError("Target user not found in conversation", 404);
+  }
+
+  // Cập nhật role
+  conversations.participantInfo = conversations.participantInfo.map((p) => {
+    if (p.id === toUserId) return { ...p, role: "member" };
+    return p;
+  });
+
+  await conversations.save();
+  return conversations;
+};
+
 module.exports = {
   getAllConversations,
   getConversationById,
@@ -418,5 +450,6 @@ module.exports = {
   grantModRole,
   updateAllowMessaging,
   pinMessage,
-  joinGroupByUrlService
+  joinGroupByUrlService,
+  removeModRole
 };
