@@ -12,6 +12,7 @@ const {
   updateAllowMessaging,
   pinMessage,
   joinGroupByUrlService,
+  removeModRole
 } = require("../services/conversation-service");
 const {
   AppError,
@@ -331,6 +332,35 @@ const grantModController = async (req, res) => {
   }
 };
 
+// Admin xóa quyền mod của người dùng
+const removeModController = async (req, res) => {
+  try {
+    const fromUserId = req.user.id; // Lấy userId từ token
+    const conversationId = req.params.id;
+    const { toUserId } = req.body;
+
+    if (!conversationId || !toUserId) {
+      throw new AppError("Missing conversationId or toUserId", 400);
+    }
+
+    const updatedConversation = await removeModRole(
+      conversationId,
+      fromUserId,
+      toUserId
+    );
+
+    responseFormat(
+      res,
+      updatedConversation,
+      "Removed mod role successfully",
+      true,
+      200
+    );
+  } catch (error) {
+    handleError(error, res, "Remove mod failed");
+  }
+}
+
 // Cập nhật quyền nhắn tin trong nhóm
 const updateAllowMessagingCotroller = async (req, res) => {
   try {
@@ -430,5 +460,6 @@ module.exports = {
   updateAllowMessagingCotroller,
   pinMessageController,
   joinGroupByUrlController,
-  checkUrlExistController
+  checkUrlExistController,
+  removeModController
 };
