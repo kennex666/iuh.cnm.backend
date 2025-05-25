@@ -74,8 +74,7 @@ class S3FileManager {
 
             const commandPushImage = new PutObjectCommand(params);
             await s3.send(commandPushImage);
-
-            const strUrl = `https://${bucketName}.s3.${bucketRegion}.amazonaws.com/${key}`;
+            const strUrl = `https://s3.${bucketRegion}.amazonaws.com/${bucketName}/${key}`;
             return { key: key, url: strUrl };
         } catch (error) {
             console.error(`Error when pushing object to S3:`, error);

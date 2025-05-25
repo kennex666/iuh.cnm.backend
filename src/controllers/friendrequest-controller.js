@@ -93,7 +93,7 @@ const updateFriendRequestAcceptController = async (req, res) => {
         if (!updatedFriendRequest) {
             throw new AppError("Friend request not found", 404);
         }
-        const { senderId, receiverId,name,avatar } = updatedFriendRequest;
+        const { senderId, receiverId, name, avatar } = updatedFriendRequest;
         console.log("senderId:", senderId); // 
         console.log("receiverId:", receiverId);
         const participantIds=[];
