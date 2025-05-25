@@ -12,7 +12,8 @@ const {
   updateAllowMessaging,
   pinMessage,
   joinGroupByUrlService,
-  removeModRole
+  removeModRole,
+  updateConversationNew
 } = require("../services/conversation-service");
 const {
   AppError,
@@ -26,6 +27,7 @@ const conversation = require("../models/conversation-model");
 const Conversation = require("../models/conversation-model");
 const { sendMessage } = require("../services/socket-emit-service");
 const { getIO } = require("../utils/socketio");
+const { createMessage } = require("../services/message-service");
 const getAllConversationsController = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -209,6 +211,73 @@ const deleteConversationController = async (req, res) => {
     console.log(error)
     handleError(error, res, "Delete conversation failed");
   }
+};
+
+const leftConversationController = async (req, res) => {
+	try {
+		const userId = req.user.id; // Lấy userId từ token
+		const conversationId = req.params.id;
+		// Lấy cuộc trò chuyện từ database
+    console.log("userId", userId);
+    console.log("conversationId", conversationId);
+		const conversation = await getConversationById(userId, conversationId);
+    console.log("conversation", conversation);
+    if (!conversation) {
+			throw new AppError("Conversation not found", 404);
+		}
+		const participantIds = conversation.participantInfo.map((p) => p.id);
+		if (!participantIds.includes(userId)) {
+			throw new AppError(
+				"You are not a participant in this conversation",
+				403
+			);
+		}
+		conversation.participantInfo = conversation.participantInfo.filter(
+			(p) => p.id !== userId
+		);
+
+		conversation.participantIds = participantIds;
+		const updatedConversation = await updateConversationNew(
+			conversationId,
+			{
+				participantInfo: conversation.participantInfo,
+				participantIds: conversation.participantInfo.map((p) => p.id),
+			}
+		);
+
+		if (!updatedConversation) {
+			throw new AppError("Failed to left conversation", 400);
+		}
+
+		const message = await createMessage({
+			conversationId: conversation.id,
+			senderId: userId,
+			type: "left_conversation",
+			content: "end",
+			readBy: [userId],
+		});
+
+		// Gửi thông báo cho tất cả người tham gia cuộc trò chuyện
+		if (!message) {
+			throw new AppError(
+				"Failed to create left conversation message",
+				400
+			);
+		}
+
+		sendMessage(getIO(), participantIds, message);
+
+		responseFormat(
+			res,
+			updatedConversation,
+			"Left conversation successful",
+			true,
+			200
+		);
+	} catch (error) {
+		console.error("Error in leftConversarionController:", error);
+		handleError(error, res, "Left conversation failed");
+	}
 };
 
 const addParticipantsController = async (req, res) => {
@@ -462,18 +531,19 @@ const checkUrlExistController = async (req, res) => {
 }
 
 module.exports = {
-  getAllConversationsController,
-  getConversationByIdController,
-  createConversationController,
-  updateConversationController,
-  deleteConversationController,
-  addParticipantsController,
-  removeParticipantsController,
-  transferAdminController,
-  grantModController,
-  updateAllowMessagingCotroller,
-  pinMessageController,
-  joinGroupByUrlController,
-  checkUrlExistController,
-  removeModController
+	getAllConversationsController,
+	getConversationByIdController,
+	createConversationController,
+	updateConversationController,
+	deleteConversationController,
+	addParticipantsController,
+	removeParticipantsController,
+	transferAdminController,
+	grantModController,
+	updateAllowMessagingCotroller,
+	pinMessageController,
+	joinGroupByUrlController,
+	checkUrlExistController,
+	removeModController,
+	leftConversationController,
 };

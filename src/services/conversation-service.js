@@ -51,7 +51,7 @@ const getConversationById = async (userId, conversationId) => {
   try {
     const conversationData = await conversation
       .findOne({
-        participantIds: { $in: [userId] },
+        participantInfo: { $elemMatch: { id: userId } },
         id: conversationId
       })
       .populate({
@@ -122,6 +122,25 @@ const updateConversation = async (req, res) => {
       throw new Error("Lỗi không xác định. Vui lòng thử lại sau.");
     }
   }
+};
+const updateConversationNew = async (conversationId, data) => {
+	try {
+		const updatedConversation = await conversation.findByIdAndUpdate(
+			conversationId,
+			data,
+			{ new: true }
+		);
+		return updatedConversation;
+	} catch (error) {
+		console.error("Error updating conversation:", error);
+		if (error instanceof Error) {
+			throw new Error(
+				"Không thể cập nhật cuộc trò chuyện. Vui lòng thử lại sau."
+			);
+		} else {
+			throw new Error("Lỗi không xác định. Vui lòng thử lại sau.");
+		}
+	}
 };
 const deleteConversation = async (req, res) => {
   try {
@@ -462,18 +481,19 @@ const removeModRole = async (conversationId, fromUserId, toUserId) => {
 };
 
 module.exports = {
-  getAllConversations,
-  getConversationById,
-  createConversation,
-  updateConversation,
-  deleteConversation,
-  getConversationByCvsId,
-  addParticipants,
-  removeParticipants,
-  transferAdminRole,
-  grantModRole,
-  updateAllowMessaging,
-  pinMessage,
-  joinGroupByUrlService,
-  removeModRole
+	getAllConversations,
+	getConversationById,
+	createConversation,
+	updateConversation,
+	deleteConversation,
+	getConversationByCvsId,
+	addParticipants,
+	removeParticipants,
+	transferAdminRole,
+	grantModRole,
+	updateAllowMessaging,
+	pinMessage,
+	joinGroupByUrlService,
+	removeModRole,
+	updateConversationNew,
 };
