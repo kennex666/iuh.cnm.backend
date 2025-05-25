@@ -51,19 +51,28 @@ class SocketService {
     }
 
     static async getAIResponse(message) {
+        const systemMessage = `
+        Bạn là một trợ lý AI chuyên hỗ trợ các câu hỏi liên quan đến trường đại học. 
+        Nếu người dùng hỏi câu hỏi không liên quan đến trường đại học, vui lòng trả lời: 
+        "Xin lỗi, tôi chỉ hỗ trợ các câu hỏi liên quan đến trường đại học. Bạn có thể hỏi tôi về lịch học, môn học, học phí, hoặc các thông tin học vụ khác.
+        Vui lòng không trả lời các câu hỏi ngoài chủ đề này.
+        Trả lời liên quan đến câu hỏi, không dài dòng bằng tiếng Việt, tập trung giải quyết vấn đề chính của câu hỏi không hỏi người dùng lại trả lời đúng trọng tâm câu hỏi.
+        Nội dung sau đây là câu hỏi của người dùng: 
+        ` + message + ` `.trim();
         try {
             const response = await axios.post(
                 `${API_URL}?key=${API_KEY}`,
                 {
-                contents: [
-                    {
-                    parts: [
+                    contents: [
                         {
-                        text: message,
+                            role: 'user',
+                            parts: [
+                                {
+                                    text: `${systemMessage}`,
+                                },
+                            ],
                         },
                     ],
-                    },
-                ],
                 },
                 {
                 headers: {
@@ -73,7 +82,7 @@ class SocketService {
             );
         
             const responseData = response.data;
-            const responseText = responseData.candidates[0]?.content?.parts[0]?.text || '';
+            const responseText = responseData.candidates?.[0]?.content?.parts?.[0]?.text || '';
         
             return responseText;
             } catch (error) {
