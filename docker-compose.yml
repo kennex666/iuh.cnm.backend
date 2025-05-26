@@ -11,6 +11,7 @@ services:
       - DB_HOST=mongodb://mongodb:27017
     volumes:
       - .:/app
+      - /app/node_modules
     restart: unless-stopped
 
   mongodb:
