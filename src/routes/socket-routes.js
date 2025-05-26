@@ -317,6 +317,9 @@ const socketRoutes = (io) => {
 		socket.on("conversation:rename", async (data) => {
 			await SocketController.handleRenameConversation(io, socket, data);
 		});
+		socket.on("conversation:update_avatar", async (data) => {
+			await SocketController.handleUpdateConversationAvatar(io, socket, data);
+		});
 	});
 }
 

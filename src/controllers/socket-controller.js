@@ -1276,6 +1276,59 @@ class SocketController {
 			});
 		}
 	}
+
+	static async handleUpdateConversationAvatar(io, socket, data) {
+		try {
+			const { conversationId, newAvatarUrl } = data;
+			const userId = socket.user.id;
+
+			if (!conversationId || !newAvatarUrl) {
+			return socket.emit("conversation:error", {
+				message: "Missing conversation ID or new avatar URL"
+			});
+			}
+
+			// Find the conversation
+			const conversation = await Conversation.findOne({ id: conversationId });
+			if (!conversation) {
+			return socket.emit("conversation:error", {
+				message: "Conversation not found"
+			});
+			}
+
+			// Check if user has permission (admin or moderator)
+			const userInfo = conversation.participantInfo.find(p => p.id === userId);
+			if (!userInfo || (userInfo.role !== 'admin' && userInfo.role !== 'mod')) {
+			return socket.emit("conversation:error", {
+				message: "You don't have permission to update this conversation's avatar"
+			});
+			}
+
+			// Update the avatar URL
+			conversation.avatarUrl = newAvatarUrl;
+			await conversation.save();
+
+			// Notify all participants
+			conversation.participantIds.forEach(participantId => {
+			MemoryManager.getSocketList(participantId).forEach(socketId => {
+				io.to(socketId).emit("conversation:avatar_updated", {
+				conversationId,
+				newAvatarUrl
+				});
+			});
+			});
+
+			// Confirm success to initiator
+			socket.emit("conversation:update_success", {
+			message: "Conversation avatar updated successfully"
+			});
+		} catch (error) {
+			console.error("Error updating conversation avatar:", error);
+			socket.emit("conversation:error", {
+			message: error.message || "Failed to update conversation avatar"
+			});
+		}
+	}
 }
 
 module.exports = SocketController;
