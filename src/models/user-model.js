@@ -4,7 +4,7 @@ const { generateIdSnowflake } = require("../utils/id-generators");
 
 const UserSchema = new Schema(
 	{
-        id: { type: String, default: generateIdSnowflake, unique: true },
+		id: { type: String, default: generateIdSnowflake, unique: true },
 		name: { type: String, required: true },
 		email: { type: String, default: null },
 		phone: { type: String, required: true },
@@ -17,12 +17,11 @@ const UserSchema = new Schema(
 		avatarUrl: {
 			type: String,
 			default:
-				"default",
+				"https://s3.ap-southeast-2.amazonaws.com/iuh.lab.k17/avt-default.png",
 		},
 		coverUrl: {
 			type: String,
-			default:
-				"default",
+			default: "default",
 		},
 		dob: { type: Date, required: true },
 		isOnline: { type: Boolean, default: false },
@@ -36,7 +35,6 @@ const UserSchema = new Schema(
 			expiredAt: { type: Date, default: null },
 			isUsed: { type: Boolean, default: false },
 		},
-
 	},
 	{ collection: "users", timestamps: true }
 );

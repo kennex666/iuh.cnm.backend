@@ -70,12 +70,12 @@ const createMessage = async (data) => {
 		);
         return message;
     } catch (error) {
-        console.error("Error creating post:", err);
-        if (err instanceof Error) {
-            throw new Error("Không thể tạo bài viết. Vui lòng thử lại sau.");
-        } else {
-            throw new Error("Lỗi không xác định. Vui lòng thử lại sau.");
-        }
+        console.error("Error creating post:", error);
+        if (error instanceof Error) {
+			throw new Error("Không thể tạo bài viết. Vui lòng thử lại sau.");
+		} else {
+			throw new Error("Lỗi không xác định. Vui lòng thử lại sau.");
+		}
     }
 }
 

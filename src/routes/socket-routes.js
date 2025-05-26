@@ -15,6 +15,8 @@ const { sendMessage } = require("../services/socket-emit-service");
 const FriendList = require("../models/friend-list-model");
 const Conversation = require("../models/conversation-model");
 const typeRoleUser = require("../models/type-role-user");
+const { setIO } = require("../utils/socketio");
+const { generateString } = require("../utils/2fa-generator");
 let io = null;
 
 
@@ -71,6 +73,7 @@ function initSocket(server, callback) {
 		},
 		maxHttpBufferSize: 10 * 1024 * 1024,
 	});
+	setIO(io);
 	callback(io);
 	console.log("Socket.io initialized");
 }
@@ -110,12 +113,20 @@ const socketRoutes = (io) => {
 		 */
 		socket.on("message:send", async (data) => {
 			console.log("data send from client", data);
-			await SocketController.handleSendMessage(io, socket, data);
+			try {
+				await SocketController.handleSendMessage(io, socket, data);
+			} catch(e){
+				console.error("Error sending message:", e);
+			}
 		});
 
 		socket.on("message:seen", async (messageId) => {
-			console.log("message:seen:", messageId);
-			await updateSeen(messageId, socket.user.id);
+			try {
+				console.log("message:seen:", messageId);
+				await updateSeen(messageId, socket.user.id);
+			} catch (e){
+				console.error("Error updating seen status:", e);
+			}
 		});
 
 		socket.on("block-user:block", async (data) => {
@@ -161,20 +172,6 @@ const socketRoutes = (io) => {
 				console.error("Error when leaving a group:", error.message);
 				socket.emit("group:error", { message: error.message });
 			}
-		});
-
-		// Event loginQR:generate
-		socket.on("loginQR:generate", () => {
-			const deviceCode = generateString(16);
-			socket.data.deviceCode = deviceCode;
-			socket.emit("loginQR:generate", {
-				errorCode: 200,
-				message: "Đã tạo mã QR đăng nhập thành công",
-				data: {
-					deviceCode: "iMessify:QRLogin_" + deviceCode,
-					socketId: socket.id,
-				},
-			});
 		});
 
 		socket.on("disconnect", () => {
@@ -304,6 +301,30 @@ const socketRoutes = (io) => {
 
 		socket.on("chatwithAI:send", async (data) => {
 			await SocketController.handleChatWithAI(io, socket, data);
+		});
+	});
+}
+
+const socketLoginQR = (io) => {
+	io.of("/skloginQR").on("connection", (socket) => {
+		console.log(`✅ New QR login client connected: ${socket.id}`);
+
+		socket.on("loginQR:generate", () => {
+			const deviceCode = generateString(16);
+			socket.data.deviceCode = deviceCode;
+			socket.emit("loginQR:generate", {
+				errorCode: 200,
+				message: "Đã tạo mã QR đăng nhập thành công",
+				data: {
+					deviceCode:
+						"iMessify:QRLogin_" + deviceCode + ";" + socket.id,
+					socketId: socket.id,
+				},
+			});
+		});
+
+		socket.on("disconnect", () => {
+			console.log(`❌ QR login client disconnected: ${socket.id}`);
 		});
 	});
 }
@@ -538,4 +559,5 @@ module.exports = {
 	getIO,
 	socketWebRTC,
 	waitingListMessageIdAdd,
+	socketLoginQR,
 };

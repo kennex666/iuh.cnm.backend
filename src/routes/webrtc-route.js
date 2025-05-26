@@ -38,7 +38,9 @@ webrtcRoute.get("/create-call/:conversationId", authMiddleware, async (req, res)
         return res.status(200).json({errorMessage: "conversationId không hợp lệ", errorCode: 100});
     }
     // Check if the user is a participant in the conversation
-    const isParticipant = conversation.participantIds.includes(req.user.id);
+    const isParticipant = conversation.participantInfo
+		.map((participant) => participant.id)
+		.includes(req.user.id);
     if (!isParticipant) {
         return res.status(200).json({errorMessage: "Bạn không phải là người tham gia cuộc trò chuyện này", errorCode: 100});
     }
@@ -71,7 +73,11 @@ webrtcRoute.get("/create-call/:conversationId", authMiddleware, async (req, res)
     const message = await messageModel.create(dataMessage);
     conversation.lastMessage = message._id;
     await conversation.save();
-    sendMessage(getIO(), conversation.participantIds, message);
+    sendMessage(
+		getIO(),
+		conversation.participantInfo.map((participant) => participant.id),
+		message
+	);
     waitingListMessageIdAdd(message.id);
     res.status(200).json({
         message: "Cuộc gọi đã được bắt đầu",
@@ -92,7 +98,9 @@ webrtcRoute.get("/end-call/:conversationId", authMiddleware, async (req, res) =>
         return res.status(200).json({errorMessage: "conversationId không hợp lệ", errorCode: 100});
     }
     // Check if the user is a participant in the conversation
-    const isParticipant = conversation.participantIds.includes(req.user.id);
+    const isParticipant = conversation.participantInfo
+		.map((participant) => participant.id)
+		.includes(req.user.id);
     if (!isParticipant) {
         return res.status(200).json({errorMessage: "Bạn không phải là người tham gia cuộc trò chuyện này", errorCode: 100});
     }
@@ -124,7 +132,7 @@ webrtcRoute.get("/end-call/:conversationId", authMiddleware, async (req, res) =>
     const message = await messageModel.create(dataMessage);
     conversation.lastMessage = message._id;
     await conversation.save();
-    sendMessage(getIO(), conversation.participantIds, message);
+    sendMessage(getIO(), conversation.participantInfo.map((participant) => participant.id), message);
     res.status(200).json({
         message: "Cuộc gọi đã kết thúc",
         data: message,
