@@ -660,25 +660,7 @@ const pinMessageController = async (req, res) => {
     }
 
     const updatedConversation = await pinMessage(conversationId, messageId);
-
-    const currentName = updatedConversation.participantInfo.find(
-      (p) => p.id === req.user.id
-    )?.name;
-
-    const message = await createMessage({
-      conversationId: updatedConversation.id,
-      senderId: req.user.id,
-      type: "system",
-      content: `${currentName} đã ghim tin nhắn mới`,
-      readBy: [req.user.id],
-    });
-    // Gửi thông báo cho tất cả người tham gia cuộc trò chuyện
-    sendMessage(
-      getIO(),
-      updatedConversation.participantInfo.map((p) => p.id),
-      message
-    );
-
+    
     responseFormat(
       res,
       updatedConversation,
@@ -701,24 +683,6 @@ const removePinMessageController = async (req, res) => {
     }
 
     const updatedConversation = await removePinMessage(conversationId, messageId);
-
-    const currentName = updatedConversation.participantInfo.find(
-      (p) => p.id === req.user.id
-    )?.name;
-    
-    const message = await createMessage({
-      conversationId: updatedConversation.id,
-      senderId: req.user.id,
-      type: "system",
-      content: `${currentName} đã bỏ ghim tin nhắn`,
-      readBy: [req.user.id],
-    });
-    // Gửi thông báo cho tất cả người tham gia cuộc trò chuyện
-    sendMessage(
-      getIO(),
-      updatedConversation.participantInfo.map((p) => p.id),
-      message
-    );
 
     responseFormat(
       res,
