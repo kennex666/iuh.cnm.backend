@@ -24,6 +24,22 @@ const responseFormat = (res, data, message, success, statusCode, error) => {
     };
     res.status(200).json(response); // trả về status 200 để fe đỡ handle exception
 };
+const responseFormatJSON = (res, data, message, success, statusCode, error) => {
+	const formattedData = data
+		? Array.isArray(data)
+			? [...data]
+			: { ...data }
+		: {};
+
+	const response = {
+		data: formattedData,
+		errorCode: statusCode,
+		success,
+		errorMessage: message,
+		errors: error,
+	};
+	return response // trả về status 200 để fe đỡ handle exception
+};
 
 const handleError = (error, res, strMessage) => {
     if (error instanceof AppError) {
@@ -47,7 +63,8 @@ const handleError = (error, res, strMessage) => {
 };
 
 module.exports = {
-    AppError,
-    responseFormat,
-    handleError
+	AppError,
+	responseFormat,
+	handleError,
+	responseFormatJSON,
 };

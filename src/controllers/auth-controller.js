@@ -1,4 +1,4 @@
-const { handleError, responseFormat } = require("../utils/response-format");
+const { handleError, responseFormat, responseFormatJSON } = require("../utils/response-format");
 const AuthService = require("../services/auth-service");
 const UserService = require("../services/user-service");
 const { sendOtp } = require("../utils/twilio");
@@ -135,11 +135,19 @@ class AuthController {
 			console.log("deviceCode", deviceCode);
 
 			try {
-				getIO().to(socketId).emit("loginQR:verified", {
-					errorCode: 200,
-					message: "Accept login QR code",
-					data: result,
-				});
+				getIO()
+					.of("/skloginQR")
+					.to(socketId)
+					.emit(
+						"loginQR:verified",
+						responseFormatJSON(
+							res,
+							result,
+							"Login QR code sent successfully",
+							true,
+							200
+						)
+					);
 				responseFormat(
 					res,
 					null,

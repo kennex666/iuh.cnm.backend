@@ -41,28 +41,42 @@ const settingsSchema = new Schema({
 	pendingList: { type: [pendingUserSchema], default: [] } // Danh sách người dùng đang chờ phê duyệt tham gia nhóm
 }, { _id: false });
 // Định nghĩa schema cho Conversation
-const conversationSchema = new Schema({
-	id: { type: String, default: generateIdSnowflake, unique: true },
-	isGroup: { type: Boolean, default: false },
-	name: { type: String, default: "" },
-	avatarUrl: { type: String, default: "" },
-	avatarGroup: { type: String, default: "" },
-	type: { type: String, enum: ['1vs1', 'group'], required: true },
-	participantIds: { type: [String], default: [] },
-	participantInfo: { type: [participantInfoSchema], default: [] },
-	url: { type: String, required: true, unique: true },
-	pinMessages: { type: [messageSchema], default: [], validate: [arr => arr.length <= 3, '{PATH} exceeds the limit of 3'] },
-	settings: { type: settingsSchema, default: () => ({}) },
-	lastMessage: {
-		type: mongoose.Schema.Types.ObjectId,
-		ref: "messageModel",
-		default: null,
+const conversationSchema = new Schema(
+	{
+		id: { type: String, default: generateIdSnowflake, unique: true },
+		isGroup: { type: Boolean, default: false },
+		name: { type: String, default: "" },
+		avatarUrl: {
+			type: String,
+			default:
+				"https://s3.ap-southeast-2.amazonaws.com/iuh.lab.k17/avt-default.png",
+		},
+		avatarGroup: { type: String, default: "" },
+		type: { type: String, enum: ["1vs1", "group"], required: true },
+		participantIds: { type: [String], default: [] },
+		participantInfo: { type: [participantInfoSchema], default: [] },
+		url: { type: String, required: true, unique: true },
+		pinMessages: {
+			type: [messageSchema],
+			default: [],
+			validate: [
+				(arr) => arr.length <= 3,
+				"{PATH} exceeds the limit of 3",
+			],
+		},
+		settings: { type: settingsSchema, default: () => ({}) },
+		lastMessage: {
+			type: mongoose.Schema.Types.ObjectId,
+			ref: "messageModel",
+			default: null,
+		},
+		createdAt: { type: Date, default: Date.now },
+		updatedAt: { type: Date, default: Date.now },
 	},
-	createdAt: { type: Date, default: Date.now },
-	updatedAt: { type: Date, default: Date.now },
-}, {
-	versionKey: false
-});
+	{
+		versionKey: false,
+	}
+);
 
 // Cập nhật tự động updatedAt
 conversationSchema.pre('findOneAndUpdate', function (next) {

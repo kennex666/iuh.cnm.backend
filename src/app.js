@@ -5,7 +5,7 @@ const corsMiddleware = require("./middlewares/cors");
 const router = require("./routes");
 const PORT = process.env.PORT || 8087;
 const HOST = process.env.HOST_NAME;
-const { socketRoutes, initSocket, socketWebRTC } = require("./routes/socket-routes");
+const { socketRoutes, initSocket, socketWebRTC, socketLoginQR } = require("./routes/socket-routes");
 const webrtcRoutes = require("./routes/webrtc-route");
 const express = require("express");
 const path = require("path");
@@ -21,6 +21,7 @@ const testRoutes = require("./routes/test-routes");
 		initSocket(server, (io) => {
 			socketRoutes(io);
 			socketWebRTC(io);
+			socketLoginQR(io);
 		});
 
 		
