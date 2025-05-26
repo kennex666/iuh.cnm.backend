@@ -13,7 +13,8 @@ const {
   pinMessage,
   joinGroupByUrlService,
   removeModRole,
-  updateConversationNew
+  updateConversationNew,
+  removePinMessage
 } = require("../services/conversation-service");
 const {
   AppError,
@@ -579,7 +580,29 @@ const pinMessageController = async (req, res) => {
     handleError(error, res, "Pin message failed");
   }
 };
+// Remove pinned message from conversation
+const removePinMessageController = async (req, res) => {
+  try {
+    const conversationId = req.params.id;
+    const { messageId } = req.body;
 
+    if (!conversationId || !messageId) {
+      throw new AppError("Missing conversationId or messageId", 400);
+    }
+
+    const updatedConversation = await removePinMessage(conversationId, messageId);
+
+    responseFormat(
+      res,
+      updatedConversation,
+      "Removed pinned message successfully",
+      true,
+      200
+    );
+  } catch (error) {
+    handleError(error, res, "Remove pinned message failed");
+  }
+};
 const joinGroupByUrlController = async (req, res) => {
   try {
     const userId = req.user.id; // Lấy userId từ token
@@ -632,4 +655,5 @@ module.exports = {
 	checkUrlExistController,
 	removeModController,
 	leftConversationController,
+  removePinMessageController
 };

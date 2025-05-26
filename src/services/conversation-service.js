@@ -384,6 +384,23 @@ const pinMessage = async (conversationId, messageId) => {
   return conversations;
 };
 
+// Bỏ ghim một tin nhắn khỏi cuộc trò chuyện
+const removePinMessage = async (conversationId, messageId) => {
+  const conversations = await conversation.findOne({ id: conversationId });
+  if (!conversations) throw new AppError("Conversation not found", 404);
+
+  // Tìm vị trí tin nhắn cần bỏ ghim
+  const index = conversations.pinMessages.findIndex(msg => msg.id === messageId);
+  if (index === -1) {
+    throw new AppError("Pinned message not found", 404);
+  }
+
+  // Xóa tin nhắn khỏi danh sách pinMessages
+  conversations.pinMessages.splice(index, 1);
+
+  await conversations.save();
+  return conversations;
+};
 const joinGroupByUrlService = async (userId, url) => {
   // Tìm cuộc trò chuyện dựa trên URL
   const conversations = await conversation.findOne({ url });
@@ -496,4 +513,5 @@ module.exports = {
 	joinGroupByUrlService,
 	removeModRole,
 	updateConversationNew,
+  removePinMessage
 };
