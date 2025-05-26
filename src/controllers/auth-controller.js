@@ -13,23 +13,50 @@ class AuthController {
 		try {
 			const dataUser = req.body;
 			const user = await AuthService.register(dataUser);
-			const msg =
+			try {
+				const msg =
 				"Ban tao tai khoan iMessify. TUYET DOI KHONG CHIA SE MA VOI BAT KI AI\n";
-			// replace phonenumber with +84
-			const phoneNumber = user.phone.replace(/^(0)/, "+84");
-			const result = await UserService.createOTP(user.id);
-			if (!user) {
+				// replace phonenumber with +84
+				const phoneNumber = user.phone.replace(/^(0)/, "+84");
+				const result = await UserService.createOTP(user.id);
+				if (!user) {
+					return responseFormat(
+						res,
+						null,
+						"Failed to create OTP",
+						false,
+						500
+					);
+				}
+				const otp = result.otp.code;
+				await sendOtp({ phoneNumber, msg, otp });
+				responseFormat(res, null, "OTP sent successfully", true, 200);
+			} catch (error) {
+				console.log(error);
+				// If OTP sending fails, we update the user to verify
+				const user = await UserService.getUserById(dataUser.id);
+				const updatedUser = await UserService.updateUser(
+					user.id,
+					{ isVerified: true }
+				);
+				if (!updatedUser) {
+					return responseFormat(
+						res,
+						null,
+						"Register successfully, but failed to update user verification status. Please contact support.",
+						false,
+						500
+					);
+				}
+				// Return success response even if OTP sending fails
 				return responseFormat(
 					res,
 					null,
-					"Failed to create OTP",
-					false,
-					500
+					"Register successfully, but OTP sending failed. Please contact support.",
+					true,
+					200
 				);
 			}
-			const otp = result.otp.code;
-			await sendOtp({ phoneNumber, msg, otp });
-			responseFormat(res, null, "OTP sent successfully", true, 200);
 		} catch (error) {
 			handleError(error, res, "Create user failed");
 		}

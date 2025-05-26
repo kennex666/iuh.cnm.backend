@@ -25,7 +25,7 @@ class UserService {
         const user = await UserModel.findById(userId).select("-password");
         if (!user) throw new AppError("User not found", 404);
 
-        const allowedFields = ["name", "gender", "dob", "email"];
+        const allowedFields = ["name", "gender", "dob", "email", "isVerified"];
         Object.keys(updateData).forEach((key) => {
             if (allowedFields.includes(key)) {
                 user[key] = updateData[key];
