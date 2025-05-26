@@ -3,7 +3,7 @@ const Conversation = require("../models/conversation-model");
 const User = require("../models/user-model");
 const SocketService = require("../services/socket-service");
 const MemoryManager = require("../utils/memory-manager");
-const { createMessage, createVote } = require("../services/message-service");
+const { createMessage, createVote, addVoteOption, removeVoteOption } = require("../services/message-service");
 const { createAttachment } = require("../services/attachment-service");
 const typeMessage = require('../models/type-message');
 
@@ -924,6 +924,68 @@ class SocketController {
 				message: "Failed to get vote"
 			});
 		}
+	}
+
+	static async handleAddVoteOption(io, socket, data) {
+		const { messageId, optionText } = data;
+		if (!messageId || !optionText) {
+			return socket.emit("vote:error", {
+				message: "Invalid data for adding vote option"
+			});
+		}
+		const message = await addVoteOption(messageId, optionText);
+		if (!message) {
+			return socket.emit("vote:error", {
+				message: "Vote message not found"
+			});
+		}
+		// Gửi thông báo đến tất cả các thành viên trong cuộc trò chuyện
+		const conversation = await Conversation.findOne({ id: message.conversationId });
+		if (!conversation) {
+			return socket.emit("vote:error", {
+				message: "Conversation not found"
+			});
+		}
+		conversation.participantInfo.forEach((participant) => {
+			const sockets = MemoryManager.getSocketList(participant.id);
+			sockets.forEach((socketId) => {
+				io.to(socketId).emit("vote:option_added", {
+					conversationId: message.conversationId,
+					vote: message
+				});
+			});
+		});
+	}
+
+	static async handleRemoveVoteOption(io, socket, data) {
+		const { messageId, optionId } = data;
+		if (!messageId || !optionId) {
+			return socket.emit("vote:error", {
+				message: "Invalid data for adding vote option"
+			});
+		}
+		const message = await removeVoteOption(messageId, optionId);
+		if (!message) {
+			return socket.emit("vote:error", {
+				message: "Vote message not found"
+			});
+		}
+		// Gửi thông báo đến tất cả các thành viên trong cuộc trò chuyện
+		const conversation = await Conversation.findOne({ id: message.conversationId });
+		if (!conversation) {
+			return socket.emit("vote:error", {
+				message: "Conversation not found"
+			});
+		}
+		conversation.participantInfo.forEach((participant) => {
+			const sockets = MemoryManager.getSocketList(participant.id);
+			sockets.forEach((socketId) => {
+				io.to(socketId).emit("vote:option_added", {
+					conversationId: message.conversationId,
+					vote: message
+				});
+			});
+		});
 	}
 
 	static async handlePinMessage(io, socket, data) {
