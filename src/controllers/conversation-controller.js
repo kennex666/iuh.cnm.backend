@@ -462,6 +462,36 @@ const transferAdminController = async (req, res) => {
       toUserId
     );
 
+    if (!updatedConversation) {
+      throw new AppError("Failed to transfer admin role", 400);
+    }
+    
+		const currentName = updatedConversation.participantInfo.find(
+			(p) => p.id === fromUserId
+		)?.name;
+    
+		const toName = updatedConversation.participantInfo.find(
+			(p) => p.id === toUserId
+		)?.name;
+
+
+
+    const message = await createMessage({
+        conversationId: updatedConversation.id,
+        senderId: fromUserId,
+        type: "system",
+        content: `${currentName} đã chuyển trưởng nhóm cho ${toName}`,
+        readBy: [fromUserId],
+    });
+
+
+    // Gửi thông báo cho tất cả người tham gia cuộc trò chuyện
+    sendMessage(
+      getIO(),
+      updatedConversation.participantInfo.map((p) => p.id),
+      message
+    );
+
     responseFormat(
       res,
       updatedConversation,
@@ -489,6 +519,29 @@ const grantModController = async (req, res) => {
       fromUserId,
       toUserId
     );
+      const currentName = updatedConversation.participantInfo.find(
+      (p) => p.id === fromUserId
+    )?.name;
+
+    const toName = updatedConversation.participantInfo.find(
+      (p) => p.id === toUserId
+    )?.name;
+
+    const message = await createMessage({
+      conversationId: updatedConversation.id,
+      senderId: fromUserId,
+      type: "system",
+      content: `${currentName} đã thăng chức cho ${toName} trở thành mod`,
+      readBy: [fromUserId],
+    });
+
+    // Gửi thông báo cho tất cả người tham gia cuộc trò chuyện
+    sendMessage(
+      getIO(),
+      updatedConversation.participantInfo.map((p) => p.id),
+      message
+    );
+
 
     responseFormat(
       res,
@@ -517,6 +570,29 @@ const removeModController = async (req, res) => {
       conversationId,
       fromUserId,
       toUserId
+    );
+
+    if (!updatedConversation) {
+      throw new AppError("Failed to remove mod role", 400);
+    }
+    const currentName = updatedConversation.participantInfo.find(
+      (p) => p.id === fromUserId
+    )?.name;
+    const toName = updatedConversation.participantInfo.find(
+      (p) => p.id === toUserId
+    )?.name;
+    const message = await createMessage({
+      conversationId: updatedConversation.id,
+      senderId: fromUserId,
+      type: "system",
+      content: `${currentName} đã thu hồi quyền mod của ${toName}`,
+      readBy: [fromUserId],
+    });
+    // Gửi thông báo cho tất cả người tham gia cuộc trò chuyện
+    sendMessage(
+      getIO(),
+      updatedConversation.participantInfo.map((p) => p.id),
+      message
     );
 
     responseFormat(
