@@ -1,11 +1,29 @@
 class WebRTCHandler {
 	socket = null; // socket.io client
 	iceServers = [
-		{
-			url: "stun:global.stun.twilio.com:3478",
-			urls: "stun:global.stun.twilio.com:3478",
-		}
-	];
+        {
+            "url": "stun:global.stun.twilio.com:3478",
+            "urls": "stun:global.stun.twilio.com:3478"
+        },
+        {
+            "credential": "+Wab/SSxGoQF+3PXny9JedErsB8vPwQh+LHXY4HmUzE=",
+            "url": "turn:global.turn.twilio.com:3478?transport=udp",
+            "urls": "turn:global.turn.twilio.com:3478?transport=udp",
+            "username": "b81f5c1ca81b2e2a7db427a9a3476d321c6723ef6fcfde26573bfe25fa7adffd"
+        },
+        {
+            "credential": "+Wab/SSxGoQF+3PXny9JedErsB8vPwQh+LHXY4HmUzE=",
+            "url": "turn:global.turn.twilio.com:3478?transport=tcp",
+            "urls": "turn:global.turn.twilio.com:3478?transport=tcp",
+            "username": "b81f5c1ca81b2e2a7db427a9a3476d321c6723ef6fcfde26573bfe25fa7adffd"
+        },
+        {
+            "credential": "+Wab/SSxGoQF+3PXny9JedErsB8vPwQh+LHXY4HmUzE=",
+            "url": "turn:global.turn.twilio.com:443?transport=tcp",
+            "urls": "turn:global.turn.twilio.com:443?transport=tcp",
+            "username": "b81f5c1ca81b2e2a7db427a9a3476d321c6723ef6fcfde26573bfe25fa7adffd"
+        }
+    ];
 
 	constructor() {}
 
