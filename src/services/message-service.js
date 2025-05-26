@@ -284,6 +284,21 @@ const getReactionsMessage = async (messageId) => {
     }
 }
 
+const searchMessages = async (conversationId, query) => {
+    try {
+        // Perform a case-insensitive search for messages containing the query
+        const messages = await messageModel.find({
+            conversationId,
+            content: { $regex: query, $options: 'i' }
+        }).sort({ sentAt: -1 }).limit(30);
+        
+        return messages;
+    } catch (error) {
+        console.error("Error searching messages:", error);
+        throw new Error("Không thể tìm kiếm tin nhắn. Vui lòng thử lại sau.");
+    }
+};
+
 
 module.exports = {
 	getAllMessages,
@@ -297,6 +312,7 @@ module.exports = {
     createVote,
     reactionsMessages,
     getReactionsMessage,
+    searchMessages
     removeVoteOption,
     addVoteOption
 };

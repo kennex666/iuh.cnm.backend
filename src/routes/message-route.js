@@ -1,6 +1,6 @@
 const {getAllMessagesController, getMessageByIdController, createMessageController, 
     updateMessageController, deleteMessageController, getMessageByConversationIdController,
-     getMessageBySenderIdController,createVoteController, reactionsMessageController, getReactionsMessageController,
+     getMessageBySenderIdController,createVoteController, reactionsMessageController, getReactionsMessageController, searchMessagesController,
      removeVoteOptionController,
      addVoteOptionController} = require('../controllers/message-controller');
 const express = require("express");
@@ -30,6 +30,8 @@ messageRoute.post("/reactions/:messageId", reactionsMessageController);
 
 messageRoute.get("/reactions/:messageId", getReactionsMessageController);
 
+//search messages
+messageRoute.get("/search/:id", searchMessagesController);
 //remove vote option
 messageRoute.put("/vote/remove-option",removeVoteOptionController);
 //add vote option

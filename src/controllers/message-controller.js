@@ -1,7 +1,7 @@
 const {getAllMessages, getMessageById, createMessage, updateMessage, 
-    deleteMessage, getMessageByConversationId,getMessageBySenderId, getReactionsMessage, createVote,reactionsMessages,
-    removeVoteOption,
+    deleteMessage, getMessageByConversationId,getMessageBySenderId, getReactionsMessage, createVote,reactionsMessages, searchMessages, removeVoteOption,
     addVoteOption} = require("../services/message-service");
+
 const {handleError,responseFormat,AppError } = require("../utils/response-format");
 const getAllMessagesController = async (req, res) => {
     try {
@@ -181,6 +181,22 @@ const addVoteOptionController = async (req, res) => {
         }
 }
 
+const searchMessagesController = async (req, res) => {
+    try {
+        const conversationId = req.params.id;
+        const query = req.query.query;
+        
+        if (!query) {
+            throw new AppError("Search query is required", 400);
+        }
+        
+        const messages = await searchMessages(conversationId, query);
+        responseFormat(res, messages, "Messages searched successfully", true, 200);
+    } catch (error) {
+        handleError(error, res, "Failed to search messages");
+    }
+};
+
 module.exports = {
     getAllMessagesController,
     getMessageByIdController,
@@ -192,6 +208,7 @@ module.exports = {
     createVoteController,
     reactionsMessageController,
     getReactionsMessageController,
+    searchMessagesController,
     removeVoteOptionController,
     addVoteOptionController
 };
