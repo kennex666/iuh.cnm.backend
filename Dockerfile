@@ -5,9 +5,11 @@ WORKDIR /app
 
 COPY package.json package-lock.json* ./
 
-RUN npm install -g pm2 && npm install
+RUN npm install
 
 COPY . .
+
+RUN npm install -g pm2
 
 EXPOSE 8081
 
