@@ -1222,6 +1222,60 @@ class SocketController {
 			});
 		}
 	}
+
+	static async handleRenameConversation(io, socket, data) {
+		try {
+			const { conversationId, newName } = data;
+			const userId = socket.user.id;
+
+			// Validate input data
+			if (!conversationId || !newName) {
+				return socket.emit("conversation:error", {
+					message: "Missing conversation ID or new name"
+				});
+			}
+
+			// Find the conversation
+			const conversation = await Conversation.findOne({ id: conversationId });
+			if (!conversation) {
+				return socket.emit("conversation:error", {
+					message: "Conversation not found"
+				});
+			}
+
+			// Check if user has permission to rename (admin or moderator)
+			const userInfo = conversation.participantInfo.find(p => p.id === userId);
+			if (!userInfo || (userInfo.role !== 'admin' && userInfo.role !== 'mod')) {
+				return socket.emit("conversation:error", {
+					message: "You don't have permission to rename this conversation"
+				});
+			}
+
+			// Update the conversation name
+			conversation.name = newName;
+			await conversation.save();
+
+			// Notify all participants about the name change
+			conversation.participantIds.forEach(participantId => {
+				MemoryManager.getSocketList(participantId).forEach(socketId => {
+					io.to(socketId).emit("conversation:renamed", {
+						conversationId,
+						newName
+					});
+				});
+			});
+
+			// Confirm success to initiator
+			socket.emit("conversation:rename_success", {
+				message: "Conversation renamed successfully"
+			});
+		} catch (error) {
+			console.error("Error renaming conversation:", error);
+			socket.emit("conversation:error", {
+				message: error.message || "Failed to rename conversation"
+			});
+		}
+	}
 }
 
 module.exports = SocketController;

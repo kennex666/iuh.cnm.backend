@@ -313,6 +313,10 @@ const socketRoutes = (io) => {
 		socket.on("chatwithAI:send", async (data) => {
 			await SocketController.handleChatWithAI(io, socket, data);
 		});
+
+		socket.on("conversation:rename", async (data) => {
+			await SocketController.handleRenameConversation(io, socket, data);
+		});
 	});
 }
 
