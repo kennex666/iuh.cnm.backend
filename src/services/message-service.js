@@ -161,7 +161,63 @@ const createVote = async ({ senderId, conversationId, question, options, multipl
     return message;
   };
 
+const removeVoteOption = async (messageId, optionId) => {
+    try {
+        const message = await messageModel.findById(messageId);
+        if (!message) throw new Error("Message not found");
 
+        // Kiểm tra loại tin nhắn
+        if (message.type !== typeMessage.VOTE) throw new Error("Message is not a vote");
+
+        // Parse nội dung vote
+        const votePayload = JSON.parse(message.content);
+
+        // Lọc bỏ option cần xóa
+        const newOptions = votePayload.options.filter(opt => opt.id !== optionId);
+
+        // Nếu không còn option nào thì không cho phép
+        if (newOptions.length < 2) throw new Error("Vote must have at least 2 options");
+
+        votePayload.options = newOptions;
+        message.content = JSON.stringify(votePayload);
+
+        await message.save();
+        return message;
+    } catch (error) {
+        console.error("Error removing vote option:", error);
+        throw error;
+    }
+};
+
+const addVoteOption = async (messageId, optionText) => {
+    try {
+        const message = await messageModel.findById(messageId);
+        if (!message) throw new Error("Message not found");
+
+        // Kiểm tra loại tin nhắn
+        if (message.type !== typeMessage.VOTE) throw new Error("Message is not a vote");
+
+        // Parse nội dung vote
+        const votePayload = JSON.parse(message.content);
+
+        // Tạo option mới
+        const newOption = {
+            id: generateIdSnowflake().toString(),
+            text: optionText,
+            votes: []
+        };
+
+        // Thêm option mới vào danh sách
+        votePayload.options.push(newOption);
+        message.content = JSON.stringify(votePayload);
+
+        await message.save();
+        return message;
+    } catch (error) {
+        console.error("Error adding vote option:", error);
+        throw error;
+    }
+};
 
 module.exports = {
 	getAllMessages,
@@ -172,5 +228,7 @@ module.exports = {
 	getMessageByConversationId,
 	getMessageBySenderId,
 	updateSeen,
-    createVote
+    createVote,
+    removeVoteOption,
+    addVoteOption
 };
