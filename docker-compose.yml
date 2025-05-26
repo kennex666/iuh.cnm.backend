@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "80:8081"
+    depends_on:
+      - mongodb
+    environment:
+      - DB_HOST=mongodb://mongodb:27017
+    volumes:
+      - .:/app
+    restart: unless-stopped
+
+  mongodb:
+    image: mongo:5
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    restart: unless-stopped
+
+volumes:
+  mongo-data:
