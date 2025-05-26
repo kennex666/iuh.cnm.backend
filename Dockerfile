@@ -9,6 +9,6 @@ RUN npm install -g pm2 && npm install
 
 COPY . .
 
-EXPOSE 8088
+EXPOSE 8081
 
 CMD [ "pm2-runtime", "src/app.js" ]
