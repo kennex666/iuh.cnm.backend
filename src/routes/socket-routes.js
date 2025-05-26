@@ -266,6 +266,7 @@ const socketRoutes = (io) => {
 		});
 
 		socket.on("conversation:remove_participants", async (data) => {
+			console.log("data remove participants", data);
 			await SocketController.handleRemoveParticipants(io, socket, data);
 		});
 
@@ -299,6 +300,10 @@ const socketRoutes = (io) => {
 
 		socket.on("conversation:delete", async (data) => {
 			await SocketController.handleDeleteConversation(io, socket, data);
+		});
+
+		socket.on("chatwithAI:send", async (data) => {
+			await SocketController.handleChatWithAI(io, socket, data);
 		});
 	});
 }
