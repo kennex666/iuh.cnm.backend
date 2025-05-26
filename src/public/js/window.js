@@ -101,7 +101,7 @@ class EventHandler {
 		this.localStream?.getTracks().forEach((track) => track.stop());
 		this.localVideo.srcObject = null;
 		this.socket.disconnect();
-		window.location.href = "/";
+		window.location.href = "https://chat.pj.io.vn/";
 	}
 
 	// 🔹 Bật/tắt cam
