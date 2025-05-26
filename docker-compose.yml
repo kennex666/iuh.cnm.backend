@@ -4,7 +4,7 @@ services:
   app:
     build: .
     ports:
-      - "80:8081"
+      - "80:8087"
     depends_on:
       - mongodb
     environment:
