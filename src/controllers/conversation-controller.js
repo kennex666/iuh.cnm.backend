@@ -160,6 +160,22 @@ const updateConversationController = async (req, res) => {
       throw new AppError("Conversation not found", 404);
     }
 
+    const currentName = updatedConversation.participantInfo.find(
+      (p) => p.id === req.user.id
+    )?.name;
+  
+    sendMessage(
+      getIO(),
+      updatedConversation.participantInfo.map((p) => p.id),
+      {
+        conversationId: updatedConversation.id,
+        senderId: req.user.id,
+        type: "system",
+        content: `${currentName} đã cập nhật thông tin cuộc trò chuyện!`,
+        readBy: [req.user.id],
+      }
+    );
+
     responseFormat(
       res,
       updatedConversation,
@@ -645,6 +661,33 @@ const pinMessageController = async (req, res) => {
 
     const updatedConversation = await pinMessage(conversationId, messageId);
 
+    if (!updatedConversation) {
+      throw new AppError("Failed to pin message", 400);
+    }
+    const pinnedMessage = updatedConversation.pinMessages.find(
+      (msg) => msg.id === messageId
+    );
+    if (!pinnedMessage) {
+      throw new AppError("Pinned message not found", 404);
+    }
+    const currentName = updatedConversation.participantInfo.find(
+      (p) => p.id === req.user.id
+    )?.name;
+
+    const message = await createMessage({
+      conversationId: updatedConversation.id,
+      senderId: req.user.id,
+      type: "system",
+      content: `${currentName} đã ghim tin nhắn: ${pinnedMessage.content}`,
+      readBy: [req.user.id],
+    });
+    // Gửi thông báo cho tất cả người tham gia cuộc trò chuyện
+    sendMessage(
+      getIO(),
+      updatedConversation.participantInfo.map((p) => p.id),
+      message
+    );
+
     responseFormat(
       res,
       updatedConversation,
@@ -667,6 +710,31 @@ const removePinMessageController = async (req, res) => {
     }
 
     const updatedConversation = await removePinMessage(conversationId, messageId);
+    if (!updatedConversation) {
+      throw new AppError("Failed to remove pinned message", 400);
+    }
+    const removedMessage = updatedConversation.pinMessages.find(
+      (msg) => msg.id === messageId
+    );
+    if (!removedMessage) {
+      throw new AppError("Pinned message not found", 404);
+    }
+    const currentName = updatedConversation.participantInfo.find(
+      (p) => p.id === req.user.id
+    )?.name;
+    const message = await createMessage({
+      conversationId: updatedConversation.id,
+      senderId: req.user.id,
+      type: "system",
+      content: `${currentName} đã bỏ ghim tin nhắn: ${removedMessage.content}`,
+      readBy: [req.user.id],
+    });
+    // Gửi thông báo cho tất cả người tham gia cuộc trò chuyện
+    sendMessage(
+      getIO(),
+      updatedConversation.participantInfo.map((p) => p.id),
+      message
+    );
 
     responseFormat(
       res,
