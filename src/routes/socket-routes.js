@@ -291,6 +291,13 @@ const socketRoutes = (io) => {
 			await SocketController.handleGetVote(io, socket, data);
 		});
 
+		socket.on("vote:add_option", async (data) => {
+			await SocketController.handleAddVoteOption(io, socket, data);
+		});
+		socket.on("vote:remove_option", async (data) => {
+			await SocketController.handleRemoveVoteOption(io, socket, data);
+		});
+
 		socket.on("message:pin", async (data) => {
 			await SocketController.handlePinMessage(io, socket, data);
 		});

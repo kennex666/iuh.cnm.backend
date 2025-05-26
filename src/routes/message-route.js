@@ -1,6 +1,8 @@
 const {getAllMessagesController, getMessageByIdController, createMessageController, 
     updateMessageController, deleteMessageController, getMessageByConversationIdController,
-     getMessageBySenderIdController,createVoteController, reactionsMessageController, getReactionsMessageController} = require('../controllers/message-controller');
+     getMessageBySenderIdController,createVoteController, reactionsMessageController, getReactionsMessageController,
+     removeVoteOptionController,
+     addVoteOptionController} = require('../controllers/message-controller');
 const express = require("express");
 const messageRoute = express.Router();
 const {authMiddleware} = require("../middlewares/auth");
@@ -27,6 +29,11 @@ messageRoute.post("/vote", checkMessagingPermission ,createVoteController);
 messageRoute.post("/reactions/:messageId", reactionsMessageController);
 
 messageRoute.get("/reactions/:messageId", getReactionsMessageController);
+
+//remove vote option
+messageRoute.put("/vote/remove-option",removeVoteOptionController);
+//add vote option
+messageRoute.put("/vote/add-option",addVoteOptionController);
 
 module.exports = messageRoute;
 
