@@ -13,7 +13,12 @@ const messageSchema = new Schema({
     sentAt: { type: Date, default: Date.now },
     readBy: { type: [String], default: [] }, // array of userId
     deleteBy: { type: [String], default: [] }, // array of userId đã xóa (soft delete)
-    isRemove: { type: Boolean, default: false }, // tin nhắn bị xóa hoàn toàn (optional)
+    isRemove: { type: Boolean, default: false }, 
+    reaction: {
+        type: Map,
+        of: String, // key: userId, value: reactionType
+        default: {}
+    },
 }, {
     timestamps: true
 });

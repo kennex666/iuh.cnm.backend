@@ -161,6 +161,70 @@ const createVote = async ({ senderId, conversationId, question, options, multipl
     return message;
   };
 
+const reactionsMessages = async (messageId, userId, reactionType) => {
+    try {
+        const message = await messageModel.findById(messageId).select('reaction');
+        if (!message) throw new Error("Message not found");
+
+        if (!message.reaction) {
+            message.reaction = new Map();
+        }
+
+        // Đảm bảo reaction là Map
+        if (!(message.reaction instanceof Map)) {
+            message.reaction = new Map(Object.entries(message.reaction));
+        }
+
+        const currentReaction = message.reaction.get(userId);
+
+        if (currentReaction === reactionType) {
+            message.reaction.delete(userId);
+        } else {
+            message.reaction.set(userId, reactionType);
+        }
+
+        message.markModified('reaction');
+        await message.save();
+
+        // Chuyển Map về object để trả về client
+        const reactionObj = {};
+        for (const [key, value] of message.reaction.entries()) {
+            reactionObj[key] = value;
+        }
+
+        return {
+            reaction: reactionObj
+        };
+
+    } catch (error) {
+        console.error(error);
+        throw error;
+    }
+};
+
+
+const getReactionsMessage = async (messageId) => {
+    try {
+        const message = await messageModel
+            .findById(messageId)
+            .select('reaction');
+        if (!message) {
+            throw new Error("Message not found");
+        }
+        if (!message.reaction) {
+            return {};
+        }
+        const reactions = {};
+        message.reaction.forEach((value, key) => {
+            reactions[key] = value;
+        });
+        return reactions;
+    }
+    catch (error) {
+        console.error("Error while fetching reactions:", error);
+        throw new Error("Không thể lấy phản ứng. Vui lòng thử lại sau.");
+    }
+}
 
 
 module.exports = {
@@ -172,5 +236,7 @@ module.exports = {
 	getMessageByConversationId,
 	getMessageBySenderId,
 	updateSeen,
-    createVote
+    createVote,
+    reactionsMessages,
+    getReactionsMessage
 };
