@@ -34,7 +34,6 @@ class AuthController {
 			} catch (error) {
 				console.log(error);
 				// If OTP sending fails, we update the user to verify
-				const user = await UserService.getUserById(dataUser.id);
 				const updatedUser = await UserService.updateUser(
 					user.id,
 					{ isVerified: true }
