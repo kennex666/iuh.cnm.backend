@@ -312,7 +312,7 @@ module.exports = {
     createVote,
     reactionsMessages,
     getReactionsMessage,
-    searchMessages
+    searchMessages,
     removeVoteOption,
     addVoteOption
 };
