@@ -46,9 +46,16 @@ class WebRTCHandler {
 			const incomingTrack = event.track;
 			const trackId = incomingTrack.id;
 
-			// ⛔ Nếu không phải video, bỏ qua
-			if (incomingTrack.kind !== "video") {
-				console.warn("❌ No camera/screen video track", incomingTrack);
+			// Nếu là audio → thêm vào stream (không cần render UI)
+			if (incomingTrack.kind === "audio") {
+				const audioStream = new MediaStream([incomingTrack]);
+				const audio = document.createElement("audio");
+				audio.srcObject = audioStream;
+				audio.autoplay = true;
+				audio.playsInline = true;
+				audio.style.display = "none"; // ẩn audio element
+				document.body.appendChild(audio);
+				return;
 			}
 
 			// ⛔ Nếu đã tồn tại trackId rồi → không render nữa
@@ -67,7 +74,7 @@ class WebRTCHandler {
 			}
 
 			// ✅ Render UI
-			if (incomingTrack.kind == "video"){
+			if (incomingTrack.kind == "video") {
 				const div = document.createElement("div");
 				div.dataset.trackId = trackId;
 				div.dataset.type = "camera";

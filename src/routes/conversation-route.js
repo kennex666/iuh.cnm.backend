@@ -6,6 +6,7 @@ const {getAllConversationsController, getConversationByIdController,
     pinMessageController,joinGroupByUrlController, checkUrlExistController, removeModController,
     leftConversationController,
     removePinMessageController, updateConversationAvatarController} = require("../controllers/conversation-controller");
+
 const {authMiddleware} = require("../middlewares/auth");
 const conversationRoute = express.Router();
 // upload is not defined
@@ -49,7 +50,6 @@ conversationRoute.put(
   "/remove-pin-message/:id",
   removePinMessageController
 );
-
 conversationRoute.put("/update-avatar/:id", upload.fields([{name: 'avatar', maxCount: 1}]), updateConversationAvatarController);
 
 module.exports = conversationRoute;

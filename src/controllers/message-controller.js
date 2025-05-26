@@ -1,5 +1,7 @@
 const {getAllMessages, getMessageById, createMessage, updateMessage, 
-    deleteMessage, getMessageByConversationId,getMessageBySenderId, getReactionsMessage, createVote,reactionsMessages} = require("../services/message-service");
+    deleteMessage, getMessageByConversationId,getMessageBySenderId, getReactionsMessage, createVote,reactionsMessages, searchMessages, removeVoteOption,
+    addVoteOption} = require("../services/message-service");
+
 const {handleError,responseFormat,AppError } = require("../utils/response-format");
 const getAllMessagesController = async (req, res) => {
     try {
@@ -128,7 +130,27 @@ const createVoteController = async (req, res) => {
       handleError(error, res, "Create vote failed");
     }
   };
+const removeVoteOptionController = async (req, res) => {
+    try {
+        const { messageId, optionId } = req.body;
+        const result = await removeVoteOption(messageId, optionId);
+        const result_JSON = JSON.parse(JSON.stringify(result));
+        responseFormat(res, result_JSON, "Remove vote option successfully", true, 200);
+    } catch (error) {
+        handleError(error, res, "Remove vote option failed");
+    } 
+};
 
+const addVoteOptionController = async (req, res) => {
+    try {
+        const { messageId, optionText } = req.body;
+        const result = await addVoteOption(messageId, optionText);
+        const result_JSON = JSON.parse(JSON.stringify(result));
+        responseFormat(res, result_JSON, "Add vote option successfully", true, 200);
+    } catch (error) {
+        handleError(error, res, "Add vote option failed");
+    }
+};
   const reactionsMessageController = async (req, res) => {
     try {
         const { messageId } = req.params;
@@ -159,6 +181,22 @@ const createVoteController = async (req, res) => {
         }
 }
 
+const searchMessagesController = async (req, res) => {
+    try {
+        const conversationId = req.params.id;
+        const query = req.query.query;
+        
+        if (!query) {
+            throw new AppError("Search query is required", 400);
+        }
+        
+        const messages = await searchMessages(conversationId, query);
+        responseFormat(res, messages, "Messages searched successfully", true, 200);
+    } catch (error) {
+        handleError(error, res, "Failed to search messages");
+    }
+};
+
 module.exports = {
     getAllMessagesController,
     getMessageByIdController,
@@ -169,5 +207,8 @@ module.exports = {
     getMessageBySenderIdController,
     createVoteController,
     reactionsMessageController,
-    getReactionsMessageController
+    getReactionsMessageController,
+    searchMessagesController,
+    removeVoteOptionController,
+    addVoteOptionController
 };
