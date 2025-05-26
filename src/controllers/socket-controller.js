@@ -14,7 +14,8 @@ const {
 const {
 	addParticipants,
 	removeParticipants,
-	grantModRole
+	grantModRole,
+	removePinMessage
 } = require("../services/conversation-service");
 const userService = require("../services/user-service");
 
@@ -827,72 +828,70 @@ class SocketController {
 	}
 
 	static async handleSubmitVote(io, socket, data) {
-		try {
-			const { conversationId, voteId, optionId } = data;
+    try {
+        const { conversationId, voteId, optionId } = data;
 
-			if (!conversationId || !voteId || !optionId) {
-				return socket.emit("vote:error", {
-					message: "Invalid data for submitting vote"
-				});
-			}
+        if (!conversationId || !voteId || !optionId) {
+            return socket.emit("vote:error", {
+                message: "Invalid data for submitting vote"
+            });
+        }
 
-			const message = await messageModel.findOne({
-				id: voteId,
-				conversationId
-			});
-			if (!message) {
-				return socket.emit("vote:error", {
-					message: "Vote not found"
-				});
-			}
+        const message = await messageModel.findOne({
+            id: voteId,
+            conversationId
+        });
+        if (!message) {
+            return socket.emit("vote:error", {
+                message: "Vote not found"
+            });
+        }
 
-			const votePayload = JSON.parse(message.content);
-			const option = votePayload.options.find((opt) => opt.id === optionId);
+        const votePayload = JSON.parse(message.content);
+        const option = votePayload.options.find((opt) => opt.id === optionId);
 
-			if (!option) {
-				return socket.emit("vote:error", {
-					message: "Option not found"
-				});
-			}
+        if (!option) {
+            return socket.emit("vote:error", {
+                message: "Option not found"
+            });
+        }
 
-			// Kiểm tra nếu người dùng đã vote
-			if (option.votes.includes(socket.user.id)) {
-				return socket.emit("vote:error", {
-					message: "You have already voted for this option"
-				});
-			}
+        // Nếu đã vote rồi thì xóa user khỏi danh sách votes, ngược lại thì thêm vào
+        const userIndex = option.votes.indexOf(socket.user.id);
+        if (userIndex !== -1) {
+            option.votes.splice(userIndex, 1); // Xóa user khỏi votes
+        } else {
+            option.votes.push(socket.user.id); // Thêm user vào votes
+        }
 
-			// Cập nhật danh sách người đã vote
-			option.votes.push(socket.user.id);
+        // Lưu lại kết quả vote
+        message.content = JSON.stringify(votePayload);
+        await message.save();
 
-			// Lưu lại kết quả vote
-			message.content = JSON.stringify(votePayload);
-			await message.save();
+        // Gửi thông báo đến tất cả các thành viên trong cuộc trò chuyện
+        const conversation = await Conversation.findOne({ id: conversationId });
+        if (!conversation) {
+            return socket.emit("vote:error", {
+                message: "Conversation not found"
+            });
+        }
 
-			// Gửi thông báo đến tất cả các thành viên trong cuộc trò chuyện
-			const conversation = await Conversation.findOne({ id: conversationId });
-			if (!conversation) {
-				return socket.emit("vote:error", {
-					message: "Conversation not found"
-				});
-			}
-
-			conversation.participantInfo.forEach((participant) => {
-				const sockets = MemoryManager.getSocketList(participant.id);
-				sockets.forEach((socketId) => {
-					io.to(socketId).emit("vote:updated", {
-						conversationId,
-						vote: message
-					});
-				});
-			});
-		} catch (error) {
-			console.error("Error submitting vote:", error);
-			socket.emit("vote:error", {
-				message: "Failed to submit vote"
-			});
-		}
-	}
+        conversation.participantInfo.forEach((participant) => {
+            const sockets = MemoryManager.getSocketList(participant.id);
+            sockets.forEach((socketId) => {
+                io.to(socketId).emit("vote:updated", {
+                    conversationId,
+                    vote: message
+                });
+            });
+        });
+    } catch (error) {
+        console.error("Error submitting vote:", error);
+        socket.emit("vote:error", {
+            message: "Failed to submit vote"
+        });
+    }
+}
 
 	static async handleGetVote(io, socket, data) {
 		try {
@@ -1008,6 +1007,47 @@ class SocketController {
 			});
 		}
 	}
+
+	static async handleRemovePinMessage(io, socket, data) {
+    try {
+        const { conversationId, messageId } = data;
+
+        if (!conversationId || !messageId) {
+            return socket.emit("message:error", {
+                message: "Invalid data for removing pinned message"
+            });
+        }
+
+        const conversation = await removePinMessage(conversationId, messageId);
+        if (!conversation) {
+            return socket.emit("message:error", {
+                message: "Conversation not found"
+            });
+        }
+
+        // Gửi thông báo đến tất cả các thành viên trong cuộc trò chuyện
+        const participants = conversation.participantInfo.map((p) => p.id);
+        participants.forEach((participantId) => {
+            const sockets = MemoryManager.getSocketList(participantId);
+            sockets.forEach((socketId) => {
+                io.to(socketId).emit("message:unpinned", {
+                    conversationId,
+                    pinnedMessages: conversation.pinMessages
+                });
+            });
+        });
+
+        // Xác nhận cho người gửi
+        socket.emit("message:unpinned:success", {
+            message: "Message unpinned successfully"
+        });
+    } catch (error) {
+        console.error("Error removing pinned message:", error);
+        socket.emit("message:error", {
+            message: error.message || "Failed to remove pinned message"
+        });
+    }
+}
 
 	static async handleDeleteConversation(io, socket, data) {
 		try {
