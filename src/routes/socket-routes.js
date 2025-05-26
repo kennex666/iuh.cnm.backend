@@ -291,8 +291,19 @@ const socketRoutes = (io) => {
 			await SocketController.handleGetVote(io, socket, data);
 		});
 
+		socket.on("vote:add_option", async (data) => {
+			await SocketController.handleAddVoteOption(io, socket, data);
+		});
+		socket.on("vote:remove_option", async (data) => {
+			await SocketController.handleRemoveVoteOption(io, socket, data);
+		});
+
 		socket.on("message:pin", async (data) => {
 			await SocketController.handlePinMessage(io, socket, data);
+		});
+
+		socket.on("message:remove_pin", async (data) => {
+			await SocketController.handleRemovePinMessage(io, socket, data);
 		});
 
 		socket.on("conversation:delete", async (data) => {
@@ -305,6 +316,10 @@ const socketRoutes = (io) => {
 
 		socket.on("conversation:rename", async (data) => {
 			await SocketController.handleRenameConversation(io, socket, data);
+		});
+
+		socket.on("conversation:update_avatar", async (data) => {
+			await SocketController.handleUpdateConversationAvatar(io, socket, data);
 		});
 	});
 }

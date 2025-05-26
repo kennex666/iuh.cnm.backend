@@ -13,7 +13,8 @@ const {
   pinMessage,
   joinGroupByUrlService,
   removeModRole,
-  updateConversationNew
+  updateConversationNew,
+  removePinMessage
 } = require("../services/conversation-service");
 const {
   AppError,
@@ -28,6 +29,8 @@ const Conversation = require("../models/conversation-model");
 const { sendMessage } = require("../services/socket-emit-service");
 const { getIO } = require("../utils/socketio");
 const { createMessage } = require("../services/message-service");
+const s3FileManager = require("../services/s3-file-manager");
+const MemoryManager = require("../utils/memory-manager");
 const getAllConversationsController = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -579,7 +582,29 @@ const pinMessageController = async (req, res) => {
     handleError(error, res, "Pin message failed");
   }
 };
+// Remove pinned message from conversation
+const removePinMessageController = async (req, res) => {
+  try {
+    const conversationId = req.params.id;
+    const { messageId } = req.body;
 
+    if (!conversationId || !messageId) {
+      throw new AppError("Missing conversationId or messageId", 400);
+    }
+
+    const updatedConversation = await removePinMessage(conversationId, messageId);
+
+    responseFormat(
+      res,
+      updatedConversation,
+      "Removed pinned message successfully",
+      true,
+      200
+    );
+  } catch (error) {
+    handleError(error, res, "Remove pinned message failed");
+  }
+};
 const joinGroupByUrlController = async (req, res) => {
   try {
     const userId = req.user.id; // Lấy userId từ token
@@ -616,6 +641,84 @@ const checkUrlExistController = async (req, res) => {
   }
 }
 
+const updateConversationAvatarController = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const conversationId = req.params.id;
+    
+    // Get the conversation
+    const conversationData = await getConversationById(userId, conversationId);
+    
+    if (!conversationData) {
+      throw new AppError("Conversation not found", 404);
+    }
+    
+    // Check if user is admin or mod
+    const currentUser = conversationData.participantInfo.find(p => p.id === userId);
+    if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'mod')) {
+      throw new AppError("You don't have permission to update this conversation", 403);
+    }
+    
+    // Process the avatar upload using S3FileManager
+    let avatarUrl = conversationData.avatarUrl;
+    
+    if (req.files && req.files.avatar) {
+      const avatarFile = {
+        buffer: req.files.avatar[0].buffer,
+        contentType: req.files.avatar[0].mimetype,
+        fileName: req.files.avatar[0].originalname,
+      };
+      
+      // Upload to S3
+      const avatarResult = await s3FileManager.pushObjectS3(avatarFile);
+      
+      if (!avatarResult) {
+        throw new AppError("Failed to upload avatar", 500);
+      }
+      
+      // Delete old avatar if it exists
+      if (conversationData.avatarUrl) {
+        const oldKey = conversationData.avatarUrl.split("/").slice(-2).join("/");
+        await s3FileManager.deleteObjectS3(oldKey);
+      }
+      
+      avatarUrl = avatarResult.url;
+    }
+    
+    // Update the conversation with the new avatar URL
+    const updatedConversation = await updateConversationNew(
+      conversationId,
+      { avatarUrl: avatarUrl }
+    );
+    
+    // Emit socket event to notify all participants
+    const io = getIO();
+    if (io) {
+      conversationData.participantInfo.forEach(participant => {
+        const sockets = MemoryManager.getSocketList(participant.id);
+        sockets.forEach(socketId => {
+          io.to(socketId).emit('conversation:avatar_updated', {
+            conversationId,
+            newAvatarUrl: avatarUrl
+          });
+        });
+      });
+    }
+    
+    responseFormat(
+      res,
+      updatedConversation,
+      "Avatar updated successfully",
+      true,
+      200
+    );
+    
+  } catch (error) {
+    console.error("Error updating conversation avatar:", error);
+    handleError(error, res, "Failed to update conversation avatar");
+  }
+};
+
 module.exports = {
 	getAllConversationsController,
 	getConversationByIdController,
@@ -632,4 +735,6 @@ module.exports = {
 	checkUrlExistController,
 	removeModController,
 	leftConversationController,
+  removePinMessageController,
+  updateConversationAvatarController
 };

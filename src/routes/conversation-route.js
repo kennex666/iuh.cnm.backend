@@ -4,9 +4,13 @@ const {getAllConversationsController, getConversationByIdController,
     deleteConversationController,addParticipantsController, removeParticipantsController, 
     transferAdminController, grantModController,updateAllowMessagingCotroller,
     pinMessageController,joinGroupByUrlController, checkUrlExistController, removeModController,
-    leftConversationController} = require("../controllers/conversation-controller");
+    leftConversationController,
+    removePinMessageController, updateConversationAvatarController} = require("../controllers/conversation-controller");
 const {authMiddleware} = require("../middlewares/auth");
 const conversationRoute = express.Router();
+// upload is not defined
+const multer = require("multer");
+const upload = multer();
 
 
 conversationRoute.use(authMiddleware);
@@ -40,6 +44,12 @@ conversationRoute.put("/:id", updateConversationController);
 conversationRoute.delete("/:id", deleteConversationController);
 //check url exist
 conversationRoute.post("/check-url-exist", checkUrlExistController);
+//remove pin message
+conversationRoute.put(
+  "/remove-pin-message/:id",
+  removePinMessageController
+);
 
+conversationRoute.put("/update-avatar/:id", upload.fields([{name: 'avatar', maxCount: 1}]), updateConversationAvatarController);
 
 module.exports = conversationRoute;
