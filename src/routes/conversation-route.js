@@ -4,7 +4,8 @@ const {getAllConversationsController, getConversationByIdController,
     deleteConversationController,addParticipantsController, removeParticipantsController, 
     transferAdminController, grantModController,updateAllowMessagingCotroller,
     pinMessageController,joinGroupByUrlController, checkUrlExistController, removeModController,
-    leftConversationController} = require("../controllers/conversation-controller");
+    leftConversationController,
+    removePinMessageController} = require("../controllers/conversation-controller");
 const {authMiddleware} = require("../middlewares/auth");
 const conversationRoute = express.Router();
 
@@ -40,6 +41,10 @@ conversationRoute.put("/:id", updateConversationController);
 conversationRoute.delete("/:id", deleteConversationController);
 //check url exist
 conversationRoute.post("/check-url-exist", checkUrlExistController);
-
+//remove pin message
+conversationRoute.put(
+  "/remove-pin-message/:id",
+  removePinMessageController
+);
 
 module.exports = conversationRoute;

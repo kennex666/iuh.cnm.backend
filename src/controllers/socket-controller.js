@@ -14,7 +14,8 @@ const {
 const {
 	addParticipants,
 	removeParticipants,
-	grantModRole
+	grantModRole,
+	removePinMessage
 } = require("../services/conversation-service");
 const userService = require("../services/user-service");
 
@@ -1008,6 +1009,47 @@ class SocketController {
 			});
 		}
 	}
+
+	static async handleRemovePinMessage(io, socket, data) {
+    try {
+        const { conversationId, messageId } = data;
+
+        if (!conversationId || !messageId) {
+            return socket.emit("message:error", {
+                message: "Invalid data for removing pinned message"
+            });
+        }
+
+        const conversation = await removePinMessage(conversationId, messageId);
+        if (!conversation) {
+            return socket.emit("message:error", {
+                message: "Conversation not found"
+            });
+        }
+
+        // Gửi thông báo đến tất cả các thành viên trong cuộc trò chuyện
+        const participants = conversation.participantInfo.map((p) => p.id);
+        participants.forEach((participantId) => {
+            const sockets = MemoryManager.getSocketList(participantId);
+            sockets.forEach((socketId) => {
+                io.to(socketId).emit("message:unpinned", {
+                    conversationId,
+                    pinnedMessages: conversation.pinMessages
+                });
+            });
+        });
+
+        // Xác nhận cho người gửi
+        socket.emit("message:unpinned:success", {
+            message: "Message unpinned successfully"
+        });
+    } catch (error) {
+        console.error("Error removing pinned message:", error);
+        socket.emit("message:error", {
+            message: error.message || "Failed to remove pinned message"
+        });
+    }
+}
 
 	static async handleDeleteConversation(io, socket, data) {
 		try {
